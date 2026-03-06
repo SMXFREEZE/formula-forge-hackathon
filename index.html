@@ -881,78 +881,95 @@
         font-size: 1.8rem;
       }
 
-      /* Mobile Floating Buttons (FABs) */
+      /* Mobile Draggable Action Bar */
       .nova-actions {
-        right: 0;
+        right: 1rem;
         bottom: 6rem;
         top: auto;
-        transform: none;
+        left: auto;
+        transform: scale(var(--fab-scale, 1));
+        transform-origin: center right;
         flex-direction: column;
-        border-radius: 20px 0 0 20px;
-        padding: 0.6rem;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 20px;
+        padding: 0.4rem;
+        transition: opacity 0.3s ease;
         z-index: 1000;
         align-items: center;
+        position: fixed;
+        touch-action: none;
+        background: rgba(17, 17, 17, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
       }
 
-      .nova-actions.minimized {
-        transform: translateX(100%);
-      }
-
-      .nova-actions-handle {
-        display: flex;
-        position: absolute;
-        left: -32px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 32px;
-        height: 48px;
-        background: var(--surface);
-        border: 1px solid var(--gold-dim);
-        border-right: none;
-        border-radius: 12px 0 0 12px;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: var(--gold);
-        box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
-        z-index: 1001;
-      }
-
-      .nova-actions-handle svg {
-        transition: transform 0.3s ease;
-      }
-
-      .nova-actions.minimized .nova-actions-handle svg {
-        transform: rotate(180deg);
-      }
-
-      .nova-actions.minimized .nova-actions-handle {
-        /* Pulse slightly when hidden so users know it's there */
-        animation: peekPulse 3s infinite;
-      }
-
-      @keyframes peekPulse {
-
-        0%,
-        100% {
-          box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2);
-        }
-
-        50% {
-          box-shadow: -4px 0 15px rgba(201, 168, 76, 0.4);
-          border-color: var(--gold);
-        }
+      .nova-actions.dragging {
+        opacity: 0.8;
       }
 
       .btn-nova {
         width: 48px;
         min-height: 48px;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
       }
 
       .btn-nova:last-child {
         margin-bottom: 0;
+      }
+
+      .drag-handle {
+        width: 100%;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        color: var(--text-muted);
+        margin-bottom: 0.2rem;
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      .hide-tools-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(196, 91, 91, 0.2);
+        color: var(--red);
+        border: 1px solid rgba(196, 91, 91, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        cursor: pointer;
+        margin-top: 0.4rem;
+      }
+
+      .show-tools-float {
+        position: fixed;
+        bottom: 1rem;
+        left: 1rem;
+        background: var(--surface);
+        border: 1px solid var(--gold);
+        color: var(--gold);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        z-index: 999;
+        display: none;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+      }
+
+      .show-tools-float.active {
+        display: flex;
+        animation: fadeUp 0.3s ease forwards;
       }
 
       .voice-fab {
@@ -1195,30 +1212,13 @@
     }
 
     .nova-actions {
-      position: fixed;
-      right: 2rem;
-      top: 50%;
-      transform: translateY(-50%);
       display: flex;
-      flex-direction: column;
       gap: 1rem;
       z-index: 100;
-      background: var(--surface);
-      padding: 1rem;
-      border-radius: 40px;
-      border: 1px solid var(--gold-dim);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .nova-actions-handle {
-      display: none;
-      /* Only visible on mobile */
     }
 
     .btn-nova {
-      width: 56px;
       height: auto;
-      min-height: 56px;
       border-radius: 12px;
       background: var(--surface);
       border: 1px solid var(--gold-dim);
@@ -2197,10 +2197,16 @@
     </section>
 
     <!-- Floating Action Bar -->
-    <div class="nova-actions minimized" id="nova-actions">
-      <div class="nova-actions-handle" onclick="toggleNovaActions()" title="Tools">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
+    <div class="nova-actions" id="nova-actions">
+      <!-- Drag Handle -->
+      <div class="drag-handle" id="drag-handle" title="Drag to move">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="5" r="1"></circle>
+          <circle cx="15" cy="5" r="1"></circle>
+          <circle cx="9" cy="12" r="1"></circle>
+          <circle cx="15" cy="12" r="1"></circle>
+          <circle cx="9" cy="19" r="1"></circle>
+          <circle cx="15" cy="19" r="1"></circle>
         </svg>
       </div>
 
@@ -2235,6 +2241,24 @@
         </svg>
         <span class="fab-label">Chat</span>
       </button>
+
+      <!-- Hide Tools Button -->
+      <div class="hide-tools-btn" id="hide-tools-btn" onclick="hideNovaActions()" title="Hide Tools">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Restore Tools Button -->
+    <div class="show-tools-float" id="show-tools-btn" onclick="showNovaActions()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Tools
     </div>
 
     <!-- End Floating Action Bar -->
@@ -4057,7 +4081,8 @@
     let _skinStream = null;
 
     function openSkinPanel() {
-      if (window.innerWidth <= 768) toggleNovaActions();
+      // Auto-hide drag bar to clear screen space on mobile
+      if (window.innerWidth <= 768) hideNovaActions();
       document.getElementById('panel-backdrop').classList.add('active');
       document.getElementById('skin-panel').classList.add('active');
       document.getElementById('skin-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4256,7 +4281,8 @@
     let _isChatMicActive = false;
 
     function openChatPanel() {
-      if (window.innerWidth <= 768) toggleNovaActions();
+      // Auto-hide drag bar to clear screen space on mobile
+      if (window.innerWidth <= 768) hideNovaActions();
       document.getElementById('panel-backdrop').classList.add('active');
       document.getElementById('chatbot-panel').classList.add('active');
       document.getElementById('chatbot-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4273,10 +4299,153 @@
       closeChatPanel();
     }
 
-    function toggleNovaActions() {
+    function hideNovaActions() {
       const el = document.getElementById('nova-actions');
-      if (el) el.classList.toggle('minimized');
+      const showBtn = document.getElementById('show-tools-btn');
+      if (el) el.style.display = 'none';
+      if (showBtn) showBtn.classList.add('active');
     }
+
+    function showNovaActions() {
+      const el = document.getElementById('nova-actions');
+      const showBtn = document.getElementById('show-tools-btn');
+      if (el) el.style.display = 'flex';
+      if (showBtn) showBtn.classList.remove('active');
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ── MOBILE ACTION BAR (Drag & Scale) ──────────────────
+    // ══════════════════════════════════════════════════════
+    function initDraggableFAB() {
+      const fab = document.getElementById('nova-actions');
+      const handle = document.getElementById('drag-handle');
+      if (!fab || !handle) return;
+
+      let isDragging = false;
+      let startX, startY;
+      let initialLeft, initialTop;
+
+      // Pinch to Zoom
+      let initialPinchDistance = null;
+      let initialScale = 1;
+      let currentScale = 1;
+
+      // Mouse Events
+      handle.addEventListener('mousedown', dragStart);
+      window.addEventListener('mousemove', drag);
+      window.addEventListener('mouseup', dragEnd);
+
+      // Touch Events (Multi-touch support)
+      fab.addEventListener('touchstart', touchStart, { passive: false });
+      window.addEventListener('touchmove', touchMove, { passive: false });
+      window.addEventListener('touchend', touchEnd);
+
+      function dragStart(e) {
+        if (e.button !== 0) return; // Only left click
+        startDragLogic(e.clientX, e.clientY);
+      }
+
+      function touchStart(e) {
+        // Prevent default to stop scrolling while interacting
+        if (e.target.closest('#drag-handle')) {
+          e.preventDefault();
+        }
+
+        if (e.touches.length === 1 && e.target.closest('#drag-handle')) {
+          // Single touch on handle -> Dragging
+          startDragLogic(e.touches[0].clientX, e.touches[0].clientY);
+        } else if (e.touches.length === 2) {
+          // Two touches -> Pinch to zoom
+          e.preventDefault();
+          initialPinchDistance = getPinchDistance(e.touches);
+          initialScale = currentScale;
+        }
+      }
+
+      function startDragLogic(clientX, clientY) {
+        isDragging = true;
+        fab.classList.add('dragging');
+
+        // Convert purely to left/top positioning if not already
+        const rect = fab.getBoundingClientRect();
+
+        // Remove bottom/right constraints for absolute positioning
+        fab.style.bottom = 'auto';
+        fab.style.right = 'auto';
+
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        // Set explicitly to avoid jumping
+        fab.style.left = `${initialLeft}px`;
+        fab.style.top = `${initialTop}px`;
+
+        startX = clientX;
+        startY = clientY;
+      }
+
+      function drag(e) {
+        if (!isDragging) return;
+        updatePosition(e.clientX, e.clientY);
+      }
+
+      function touchMove(e) {
+        if (e.touches.length === 1 && isDragging) {
+          e.preventDefault(); // Stop scrolling
+          updatePosition(e.touches[0].clientX, e.touches[0].clientY);
+        } else if (e.touches.length === 2 && initialPinchDistance !== null) {
+          e.preventDefault(); // Stop zooming the whole page
+          const distance = getPinchDistance(e.touches);
+          const scaleChange = distance / initialPinchDistance;
+
+          currentScale = Math.min(Math.max(0.5, initialScale * scaleChange), 1.5);
+          fab.style.setProperty('--fab-scale', currentScale);
+        }
+      }
+
+      function updatePosition(clientX, clientY) {
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        let newLeft = initialLeft + dx;
+        let newTop = initialTop + dy;
+
+        // Keep within bounds
+        const rect = fab.getBoundingClientRect();
+        const maxLeft = window.innerWidth - rect.width;
+        const maxTop = window.innerHeight - rect.height;
+
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        fab.style.left = `${newLeft}px`;
+        fab.style.top = `${newTop}px`;
+      }
+
+      function dragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        fab.classList.remove('dragging');
+      }
+
+      function touchEnd(e) {
+        if (e.touches.length < 2) {
+          initialPinchDistance = null;
+        }
+        if (e.touches.length === 0) {
+          dragEnd();
+        }
+      }
+
+      function getPinchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+    }
+
+    // Initialize DRag on load
+    document.addEventListener('DOMContentLoaded', initDraggableFAB);
 
     function addChatMsg(role, text) {
       const container = document.getElementById('chatbot-messages');
