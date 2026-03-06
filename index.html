@@ -4354,6 +4354,701 @@
       }
     }, 6000);
   </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+     VOICE CHAT & PRODUCT SEARCH (injected components)
+     ═══════════════════════════════════════════════════════════════════ -->
+  <style>
+    /* ── Voice Chat FAB ─────────────────────────────────── */
+    .voice-fab {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 9999;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #C9A84C, #B8942E);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(201, 168, 76, 0.4);
+      transition: all 0.3s ease;
+      animation: fabPulse 3s ease-in-out infinite;
+    }
+
+    .voice-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px rgba(201, 168, 76, 0.6);
+    }
+
+    .voice-fab svg {
+      width: 26px;
+      height: 26px;
+      fill: #0A0A0A;
+    }
+
+    @keyframes fabPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 20px rgba(201, 168, 76, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 4px 30px rgba(201, 168, 76, 0.7), 0 0 0 8px rgba(201, 168, 76, 0.1);
+      }
+    }
+
+    /* ── Voice Chat Modal ───────────────────────────────── */
+    .voice-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(5, 5, 5, 0.95);
+      backdrop-filter: blur(20px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    .voice-modal.active {
+      display: flex;
+    }
+
+    .voice-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      background: transparent;
+      color: var(--gold);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .voice-orb {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.15), transparent);
+      border: 2px solid rgba(201, 168, 76, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.5s ease;
+      position: relative;
+    }
+
+    .voice-orb.listening {
+      border-color: rgba(201, 168, 76, 0.6);
+      box-shadow: 0 0 40px rgba(201, 168, 76, 0.3), 0 0 80px rgba(201, 168, 76, 0.1);
+      animation: orbListening 1.5s ease-in-out infinite;
+    }
+
+    .voice-orb.thinking {
+      border-color: rgba(100, 180, 255, 0.5);
+      box-shadow: 0 0 40px rgba(100, 180, 255, 0.2);
+      animation: orbThinking 1s ease-in-out infinite;
+    }
+
+    .voice-orb.speaking {
+      border-color: rgba(107, 158, 107, 0.6);
+      box-shadow: 0 0 40px rgba(107, 158, 107, 0.3), 0 0 80px rgba(107, 158, 107, 0.1);
+      animation: orbSpeaking 0.8s ease-in-out infinite;
+    }
+
+    @keyframes orbListening {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes orbThinking {
+
+      0%,
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+
+      50% {
+        transform: scale(0.95) rotate(5deg);
+      }
+    }
+
+    @keyframes orbSpeaking {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .voice-orb-icon {
+      width: 50px;
+      height: 50px;
+      fill: var(--gold);
+      transition: fill 0.3s;
+    }
+
+    .voice-orb.thinking .voice-orb-icon {
+      fill: #64b4ff;
+    }
+
+    .voice-orb.speaking .voice-orb-icon {
+      fill: #6B9E6B;
+    }
+
+    .voice-status {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      transition: color 0.3s;
+    }
+
+    .voice-status.thinking {
+      color: #64b4ff;
+    }
+
+    .voice-status.speaking {
+      color: #6B9E6B;
+    }
+
+    .voice-transcript {
+      max-width: 500px;
+      max-height: 300px;
+      overflow-y: auto;
+      width: 100%;
+      padding: 1rem;
+    }
+
+    .voice-msg {
+      margin-bottom: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      animation: msgFade 0.4s ease forwards;
+    }
+
+    .voice-msg.user {
+      background: rgba(201, 168, 76, 0.1);
+      border-left: 3px solid var(--gold);
+      color: var(--text);
+    }
+
+    .voice-msg.ai {
+      background: rgba(107, 158, 107, 0.1);
+      border-left: 3px solid #6B9E6B;
+      color: var(--text);
+    }
+
+    @keyframes msgFade {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .voice-mic-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .voice-mic-btn:hover {
+      background: rgba(201, 168, 76, 0.1);
+    }
+
+    .voice-mic-btn.recording {
+      background: rgba(196, 91, 91, 0.2);
+      border-color: var(--red);
+      animation: recPulse 1s ease-in-out infinite;
+    }
+
+    .voice-mic-btn svg {
+      width: 30px;
+      height: 30px;
+      fill: var(--gold);
+    }
+
+    .voice-mic-btn.recording svg {
+      fill: var(--red);
+    }
+
+    @keyframes recPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(196, 91, 91, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 0 12px rgba(196, 91, 91, 0);
+      }
+    }
+
+    /* ── Product Cards ──────────────────────────────────── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid rgba(201, 168, 76, 0.15);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      animation: cardSlide 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .product-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(201, 168, 76, 0.15);
+    }
+
+    @keyframes cardSlide {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .product-brand {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+
+    .product-name {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--text);
+      margin-bottom: 0.8rem;
+    }
+
+    .product-price {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: #6B9E6B;
+      margin-bottom: 0.3rem;
+    }
+
+    .product-store {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 0.8rem;
+    }
+
+    .product-why {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .product-rating {
+      color: #C9A84C;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .product-buy {
+      display: inline-block;
+      padding: 0.6rem 1.5rem;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.3s;
+      border-radius: 4px;
+    }
+
+    .product-buy:hover {
+      background: var(--gold);
+      color: #0A0A0A;
+    }
+
+    /* ── Safety Alerts ──────────────────────────────────── */
+    .safety-alerts {
+      margin: 1.5rem 0;
+    }
+
+    .safety-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      animation: cardSlide 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    .safety-alert.info {
+      background: rgba(100, 180, 255, 0.08);
+      border-left: 3px solid #64b4ff;
+    }
+
+    .safety-alert.warning {
+      background: rgba(201, 168, 76, 0.08);
+      border-left: 3px solid var(--gold);
+    }
+
+    .safety-alert.danger {
+      background: rgba(196, 91, 91, 0.08);
+      border-left: 3px solid var(--red);
+    }
+
+    .safety-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .safety-text {
+      color: var(--text);
+    }
+
+    .safety-ingredient {
+      font-weight: 500;
+      color: var(--gold);
+    }
+  </style>
+
+  <!-- Voice Chat FAB Button -->
+  <button class="voice-fab" id="voiceFab" onclick="openVoiceChat()" title="Voice Chat">
+    <svg viewBox="0 0 24 24">
+      <path
+        d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+    </svg>
+  </button>
+
+  <!-- Voice Chat Modal -->
+  <div class="voice-modal" id="voiceModal">
+    <button class="voice-close" onclick="closeVoiceChat()">✕</button>
+
+    <div class="voice-orb" id="voiceOrb">
+      <svg class="voice-orb-icon" viewBox="0 0 24 24">
+        <path
+          d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      </svg>
+    </div>
+
+    <div class="voice-status" id="voiceStatus">TAP THE MIC TO START</div>
+
+    <div class="voice-transcript" id="voiceTranscript"></div>
+
+    <button class="voice-mic-btn" id="voiceMicBtn" onclick="toggleRecording()">
+      <svg viewBox="0 0 24 24">
+        <path
+          d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    // ═════════════════════════════════════════════════════════════════════
+    // VOICE CHAT ENGINE
+    // ═════════════════════════════════════════════════════════════════════
+
+    let voiceWs = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let audioContext = null;
+
+    function openVoiceChat() {
+      document.getElementById('voiceModal').classList.add('active');
+      connectVoiceWs();
+    }
+
+    function closeVoiceChat() {
+      document.getElementById('voiceModal').classList.remove('active');
+      if (isRecording) stopRecording();
+      if (voiceWs) { voiceWs.close(); voiceWs = null; }
+    }
+
+    function connectVoiceWs() {
+      if (voiceWs && voiceWs.readyState === WebSocket.OPEN) return;
+
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      voiceWs = new WebSocket(`${protocol}//${location.host}/api/s2s`);
+
+      voiceWs.onopen = () => {
+        console.log('Voice WS connected');
+        setVoiceStatus('idle');
+      };
+
+      voiceWs.onmessage = (evt) => {
+        if (typeof evt.data === 'string') {
+          const data = JSON.parse(evt.data);
+          if (data.type === 'status') {
+            setVoiceStatus(data.status);
+          } else if (data.type === 'voice_response') {
+            addTranscriptMsg('user', data.user_text);
+            addTranscriptMsg('ai', data.text);
+          } else if (data.type === 'speech_done') {
+            setVoiceStatus('idle');
+          }
+        } else if (evt.data instanceof Blob) {
+          // TTS audio blob — play it
+          playAudioBlob(evt.data);
+        }
+      };
+
+      voiceWs.onerror = (e) => console.error('Voice WS error:', e);
+      voiceWs.onclose = () => { voiceWs = null; setVoiceStatus('idle'); };
+    }
+
+    function setVoiceStatus(status) {
+      const orb = document.getElementById('voiceOrb');
+      const label = document.getElementById('voiceStatus');
+      orb.className = 'voice-orb';
+      label.className = 'voice-status';
+
+      switch (status) {
+        case 'listening':
+          orb.classList.add('listening');
+          label.textContent = 'LISTENING...';
+          break;
+        case 'processing':
+          orb.classList.add('thinking');
+          label.classList.add('thinking');
+          label.textContent = 'PROCESSING AUDIO...';
+          break;
+        case 'thinking':
+          orb.classList.add('thinking');
+          label.classList.add('thinking');
+          label.textContent = 'THINKING...';
+          break;
+        case 'speaking':
+          orb.classList.add('speaking');
+          label.classList.add('speaking');
+          label.textContent = 'SPEAKING...';
+          break;
+        default:
+          label.textContent = 'TAP THE MIC TO SPEAK';
+      }
+    }
+
+    function addTranscriptMsg(role, text) {
+      if (!text) return;
+      const container = document.getElementById('voiceTranscript');
+      const div = document.createElement('div');
+      div.className = `voice-msg ${role}`;
+      div.textContent = role === 'user' ? `You: ${text}` : `AI: ${text}`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        await startRecording();
+      }
+    }
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          stream.getTracks().forEach(t => t.stop());
+
+          // Send audio to WebSocket
+          if (voiceWs && voiceWs.readyState === WebSocket.OPEN && blob.size > 100) {
+            blob.arrayBuffer().then(buf => {
+              voiceWs.send(buf);
+              setVoiceStatus('processing');
+            });
+          }
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('voiceMicBtn').classList.add('recording');
+        setVoiceStatus('listening');
+
+      } catch (err) {
+        console.error('Microphone error:', err);
+        alert('Please allow microphone access to use voice chat.');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      isRecording = false;
+      document.getElementById('voiceMicBtn').classList.remove('recording');
+    }
+
+    function playAudioBlob(blob) {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setVoiceStatus('idle');
+      };
+      audio.play().catch(e => {
+        console.error('Audio play error:', e);
+        setVoiceStatus('idle');
+      });
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // PRODUCT SEARCH
+    // ═════════════════════════════════════════════════════════════════════
+
+    async function searchProducts(concerns, skinType, ingredients) {
+      try {
+        const resp = await fetch('/product_search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            concerns: concerns || ['hydration'],
+            skin_type: skinType || 'combination',
+            ingredients: ingredients || [],
+          }),
+        });
+        const data = await resp.json();
+        return data.products || [];
+      } catch (e) {
+        console.error('Product search error:', e);
+        return [];
+      }
+    }
+
+    function renderProductCards(products, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container || !products.length) return;
+
+      let html = '<h3 class="section-title" style="margin-top:2rem;">🛒 Recommended Products &amp; Prices</h3>';
+      html += '<div class="product-grid">';
+
+      products.forEach((p, i) => {
+        const stars = '★'.repeat(Math.floor(p.rating || 4)) + (p.rating % 1 >= 0.5 ? '½' : '');
+        html += `
+      <div class="product-card" style="animation-delay:${i * 0.1}s">
+        <div class="product-brand">${p.brand || ''}</div>
+        <div class="product-name">${p.product || ''}</div>
+        <div class="product-price">${p.price || ''}</div>
+        <div class="product-store">Cheapest at ${p.cheapest_store || 'Online'}</div>
+        <div class="product-rating">${stars}</div>
+        <div class="product-why">${p.why || ''}</div>
+        <a href="${p.buy_url || '#'}" target="_blank" rel="noopener" class="product-buy">Buy Now →</a>
+      </div>
+    `;
+      });
+
+      html += '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // INGREDIENT SAFETY CHECKER
+    // ═════════════════════════════════════════════════════════════════════
+
+    async function checkIngredientSafety(ingredients) {
+      try {
+        const resp = await fetch('/ingredient_safety', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ingredients }),
+        });
+        const data = await resp.json();
+        return data.alerts || [];
+      } catch (e) {
+        console.error('Safety check error:', e);
+        return [];
+      }
+    }
+
+    function renderSafetyAlerts(alerts, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container || !alerts.length) return;
+
+      let html = '<div class="safety-alerts">';
+      html += '<h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:0.8rem;color:var(--gold);">⚠️ Ingredient Safety Alerts</h4>';
+
+      alerts.forEach((a, i) => {
+        html += `
+      <div class="safety-alert ${a.severity || 'info'}" style="animation-delay:${i * 0.1}s">
+        <span class="safety-icon">${a.icon || '📋'}</span>
+        <div>
+          <span class="safety-ingredient">${a.ingredient || ''}</span>
+          <span class="safety-text"> — ${a.message || ''}</span>
+        </div>
+      </div>
+    `;
+      });
+
+      html += '</div>';
+      container.insertAdjacentHTML('beforeend', html);
+    }
+  </script>
+
 </body>
 
 </html>

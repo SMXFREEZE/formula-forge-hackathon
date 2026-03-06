@@ -611,136 +611,226 @@ async def competitor_teardown_endpoint(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-# ── OpenAI Voice S2S & Vision ─────────────────────────────────────────
+# ── Real-Time Voice Chat & Vision ─────────────────────────────────────
 
 @app.websocket("/api/s2s")
 async def s2s_websocket(websocket: WebSocket):
     await websocket.accept()
-    print("OpenAI Voice S2S connected.")
-    
-    # ── Event-Driven Orchestrator Context ──
-    # Global context shared between Omni (Eye) and Sonic (Voice) for real-time awareness
+    print("Voice Chat WebSocket connected.")
+
+    # Per-session conversation history for context
+    conversation_history: List[Dict[str, str]] = []
     s2s_context: Dict[str, Any] = {
         "is_active": True,
-        "visual_data": None
+        "visual_data": None,
+        "formula_context": None,   # optional formula JSON for context
     }
-    
-    async def process_nova_act(task_goal: str):
-        # Agentic browser task orchestration
+
+    SYSTEM_PROMPT = (
+        "You are FormulaForge AI, an expert cosmetic science assistant. "
+        "You speak naturally and helpfully — like a knowledgeable friend giving skincare advice. "
+        "Keep responses concise (2-4 sentences) since they will be spoken aloud. "
+        "If the user asks about a formula, ingredients, or skincare, give actionable advice. "
+        "Be warm, professional, and confident."
+    )
+
+    async def send_status(status: str):
+        """Send UI status update to frontend."""
+        try:
+            await websocket.send_json({"type": "status", "status": status})
+        except Exception:
+            pass
+
+    async def voice_respond(user_text: str):
+        """Full voice pipeline: get GPT response → send text + TTS audio."""
+        try:
+            # 1. Send status: thinking
+            await send_status("thinking")
+
+            # 2. Build messages with conversation history
+            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+            # Add formula context if available
+            if s2s_context.get("formula_context"):
+                messages.append({
+                    "role": "system",
+                    "content": f"Current formula context: {s2s_context['formula_context']}"
+                })
+
+            # Add conversation history (last 10 turns)
+            messages.extend(conversation_history[-10:])
+            messages.append({"role": "user", "content": user_text})
+
+            # 3. Get GPT-4o-mini response
+            forge = ff.FormulaForge()
+            reply_text = forge.openai_mini.invoke(
+                user_text,
+                system=SYSTEM_PROMPT,
+                max_tokens=300,
+            )
+
+            # 4. Save to history
+            conversation_history.append({"role": "user", "content": user_text})
+            conversation_history.append({"role": "assistant", "content": reply_text})
+
+            # 5. Send text transcript to frontend
+            await websocket.send_json({
+                "type": "voice_response",
+                "text": reply_text,
+                "user_text": user_text,
+            })
+
+            # 6. Generate TTS audio and send
+            await send_status("speaking")
+            try:
+                audio_bytes = forge.openai_client.generate_speech(reply_text)
+                await websocket.send_bytes(audio_bytes)
+            except Exception as tts_err:
+                print(f"TTS error: {tts_err}")
+                # Send a signal that speaking is done even without audio
+                await websocket.send_json({"type": "speech_done"})
+
+            # 7. Ready for next input  
+            await send_status("idle")
+
+        except Exception as e:
+            print(f"Voice respond error: {e}")
+            traceback.print_exc()
+            try:
+                await websocket.send_json({
+                    "type": "voice_response",
+                    "text": "I'm sorry, I had trouble processing that. Could you try again?",
+                    "user_text": user_text,
+                })
+                await send_status("idle")
+            except Exception:
+                pass
+
+    async def process_agentic_task(task_goal: str):
+        """Agentic browser task orchestration."""
         await asyncio.sleep(1)
         print("Agentic task invoked for:", task_goal)
         try:
             await websocket.send_json({
-                "type": "act_status", 
-                "status": f"Executing Regulatory Scan, Sourcing, and PIF generation...",
+                "type": "act_status",
+                "status": "Executing Regulatory Scan, Sourcing, and PIF generation...",
                 "documents": [
                     {"title": "Regulatory Scan", "summary": "Canadian & FDA compliance verified. Retinol within legal limits."},
                     {"title": "Ingredient Sourcing", "summary": "Identified 3 suppliers for Squalane. Primary: Montreal Organics."},
-                    {"title": "Draft PIF & Marketing", "summary": "Product Information File finalized. 'Hydration Reimagined' copy generated."}
-                ]
+                    {"title": "Draft PIF & Marketing", "summary": "Product Information File finalized. 'Hydration Reimagined' copy generated."},
+                ],
             })
         except Exception:
             pass
-            
-    async def process_nova_omni(task_goal: str):
-        # GPT-4o Vision multimodal reasoning
+
+    async def process_vision(task_goal: str):
+        """GPT-4o Vision multimodal reasoning."""
         await asyncio.sleep(0.5)
-        print(f"GPT-4o Vision processing image goal: {task_goal}")
-        
-        # Share context with voice
+        print(f"GPT-4o Vision processing: {task_goal}")
         s2s_context["visual_data"] = f"Analyzed context for: {task_goal}"
         try:
             await websocket.send_json({
-                "type": "omni_status", 
-                "status": f"Visual data received. Translating context: {task_goal}..."
+                "type": "omni_status",
+                "status": f"Visual data received. Processing: {task_goal}...",
             })
-            
-            # Generate real voice response via OpenAI TTS
-            await asyncio.sleep(0.5)
-            try:
-                forge = ff.FormulaForge()
-                audio_bytes = forge.openai_client.generate_speech(
-                    f"I've analyzed the visual context for: {task_goal}. Processing now."
-                )
-                await websocket.send_bytes(audio_bytes)
-            except Exception:
-                # Fallback: send minimal WAV header if TTS fails
-                fake_audio_wav_header = b'RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00'
-                await websocket.send_bytes(fake_audio_wav_header)
-
+            # Voice response about the visual analysis
+            await voice_respond(f"Describe what you found analyzing: {task_goal}")
         except Exception:
             pass
 
-    async def process_chat_message(text: str, voice_response: bool):
-        await asyncio.sleep(0.3)
-        print(f"Chat received: {text} | Voice Resp: {voice_response}")
-        
-        # Use GPT-4o-mini for fast chat responses
-        forge = ff.FormulaForge()
-        try:
-            reply_text = forge.openai_mini.invoke(
-                text,
-                system="You are FormulaForge AI, a helpful cosmetic science assistant. Be concise and professional.",
-                max_tokens=200
-            )
-        except Exception:
-            reply_text = f"I've received your message: '{text}'. Let me assist you further!"
-        
-        if voice_response:
-            # Generate real voice response via OpenAI TTS
-            try:
-                audio_bytes = forge.openai_client.generate_speech(reply_text)
-                await websocket.send_bytes(audio_bytes)
-            except Exception:
-                # Fallback: send text if TTS fails
-                try:
-                    await websocket.send_json({"type": "chat_response", "text": reply_text})
-                except Exception:
-                    pass
-        else:
-            # Send text response
-            try:
-                await websocket.send_json({
-                    "type": "chat_response",
-                    "text": reply_text
-                })
-            except Exception:
-                pass
-
     try:
+        # Send initial greeting
+        await send_status("idle")
+
         while s2s_context["is_active"]:
             message = await websocket.receive()
-            
+
             if message.get("type") == "websocket.disconnect":
                 s2s_context["is_active"] = False
                 break
-                
+
             if "text" in message:
                 data = json.loads(message["text"])
-                if data.get("type") == "nova_act":
-                    asyncio.create_task(process_nova_act(data.get("task")))
-                elif data.get("type") == "omni_image":
-                    asyncio.create_task(process_nova_omni(data.get("task")))
-                elif data.get("type") == "chat_message":
-                    asyncio.create_task(process_chat_message(data.get("text"), data.get("voice_response", False)))
+                msg_type = data.get("type", "")
+
+                if msg_type == "chat_message":
+                    # Text message → voice response
+                    user_text = data.get("text", "")
+                    if user_text.strip():
+                        asyncio.create_task(voice_respond(user_text))
+
+                elif msg_type == "set_context":
+                    # Frontend sends formula context for more relevant answers
+                    s2s_context["formula_context"] = data.get("formula_json")
+
+                elif msg_type == "nova_act":
+                    asyncio.create_task(process_agentic_task(data.get("task", "")))
+
+                elif msg_type == "omni_image":
+                    asyncio.create_task(process_vision(data.get("task", "")))
+
             elif "bytes" in message:
-                # Receive raw audio binary and transcribe via Whisper.
+                # Voice input: raw audio → Whisper → GPT → TTS
                 audio_bytes = message["bytes"]
-                # Process audio with OpenAI Whisper for speech-to-text.
-                # Voice reads shared context from Vision.
+                if len(audio_bytes) < 100:
+                    continue  # Skip empty/tiny audio chunks
+
+                await send_status("processing")
+
                 try:
                     forge = ff.FormulaForge()
                     transcribed = forge.openai_client.transcribe_audio(audio_bytes)
-                    if transcribed.strip():
-                        await process_chat_message(transcribed, voice_response=True)
+                    if transcribed and transcribed.strip():
+                        print(f"Whisper transcribed: {transcribed}")
+                        await voice_respond(transcribed)
+                    else:
+                        await send_status("idle")
                 except Exception as whisper_err:
-                    print(f"Whisper transcription error: {whisper_err}")
+                    print(f"Whisper error: {whisper_err}")
+                    await send_status("idle")
+
     except WebSocketDisconnect:
         s2s_context["is_active"] = False
-        print("OpenAI Voice S2S disconnected.")
+        print("Voice Chat disconnected.")
     except Exception as e:
         s2s_context["is_active"] = False
-        print(f"OpenAI S2S Error: {e}")
+        print(f"Voice Chat Error: {e}")
+
+# ── Product Search & Safety Endpoints ─────────────────────────────────
+
+class ProductSearchRequest(BaseModel):
+    concerns: list[str] = []
+    skin_type: str = ""
+    ingredients: list[str] = []
+
+@app.post("/product_search")
+async def product_search(req: ProductSearchRequest):
+    """Search for real products with prices and purchase links."""
+    try:
+        forge = ff.FormulaForge()
+        products = forge.search_product_prices(
+            concerns=req.concerns,
+            skin_type=req.skin_type,
+            ingredients=req.ingredients,
+        )
+        return {"products": products}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SafetyCheckRequest(BaseModel):
+    ingredients: list[dict] = []
+
+@app.post("/ingredient_safety")
+async def ingredient_safety(req: SafetyCheckRequest):
+    """Check ingredients for safety concerns and regulatory issues."""
+    try:
+        forge = ff.FormulaForge()
+        alerts = forge.check_ingredient_safety(req.ingredients)
+        return {"alerts": alerts}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ── Health check ──────────────────────────────────────────────────────
 

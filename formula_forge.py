@@ -46,6 +46,15 @@ from rich.table import Table
 from rich.text import Text
 from rich import box
 
+# Optional: boto3 for Nova Reel video generation (graceful fallback if not installed)
+try:
+    import boto3
+    import botocore
+    from botocore.config import Config as BotoConfig
+    HAS_BOTO3 = True
+except ImportError:
+    HAS_BOTO3 = False
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Configuration & Constants
 # ──────────────────────────────────────────────────────────────────────────────
@@ -61,6 +70,10 @@ DEFAULT_BUDGET = 15.0          # $/100g default budget ceiling
 SOLVER_TIME_LIMIT = 30         # seconds
 TEMPERATURE = 0.3              # low temp for structured output reliability
 SLIDES_SCRIPT = Path(__file__).parent / "generate_slides.js"
+
+# Nova Reel (AWS Bedrock) - for turntable video generation
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
+NOVA_REEL_MODEL_ID = "amazon.nova-reel-v1:0"
 
 # Regulatory hard limits (simplified EU/FDA guardrails)
 REGULATORY_LIMITS: dict[str, float] = {
@@ -1130,14 +1143,148 @@ class FormulaForge:
         console.print(f"  [bold green]360° frames complete: {len(frame_paths)}/{num_frames} generated[/bold green]")
         return frame_paths
 
-    def generate_turntable_video(self, user_input: str, output_dir: str, canvas_image_path: str = "", **kwargs) -> Optional[str]:
+    # ── Default AWS configuration for Nova Reel ─────────────────────────
+    DEFAULT_S3_BUCKET = "formulaforge-reel-outputs"
+    DEFAULT_BEDROCK_ROLE_ARN = "arn:aws:iam::455982475302:role/formulaforge-bedrock-role"
+
+    def generate_turntable_video(self, user_input: str, output_dir: str, canvas_image_path: str = "", s3_bucket: str = "", **kwargs) -> Optional[str]:
         """
-        Generate a turntable product video by creating multiple DALL-E 3 frames
-        and stitching them into an MP4 using imageio.
+        Generate a turntable product video.
+        Primary: Amazon Nova Reel (if boto3 + AWS credentials are available).
+        Fallback: DALL-E 3 multi-frame stitching into MP4.
         Returns the local path to the MP4 on success, None on failure.
         """
         brand_name = getattr(self, '_current_brand_name', user_input)
 
+        # ── Try Nova Reel first ──
+        if HAS_BOTO3:
+            s3_bucket = s3_bucket or os.environ.get("FORGE_S3_BUCKET", self.DEFAULT_S3_BUCKET)
+            role_arn = os.environ.get("FORGE_BEDROCK_ROLE_ARN", self.DEFAULT_BEDROCK_ROLE_ARN)
+
+            if s3_bucket and role_arn:
+                result = self._try_nova_reel(user_input, output_dir, brand_name, s3_bucket, role_arn, canvas_image_path)
+                if result:
+                    return result
+                console.print("  [yellow]Nova Reel failed, falling back to DALL-E 3 frame stitching...[/yellow]")
+            else:
+                console.print("  [dim]AWS not configured (no S3/IAM), using DALL-E 3 fallback...[/dim]")
+        else:
+            console.print("  [dim]boto3 not installed, using DALL-E 3 fallback...[/dim]")
+
+        # ── Fallback: DALL-E 3 frame stitching ──
+        return self._dalle_turntable_fallback(user_input, output_dir, brand_name)
+
+    def _try_nova_reel(self, user_input: str, output_dir: str, brand_name: str, s3_bucket: str, role_arn: str, canvas_image_path: str) -> Optional[str]:
+        """Attempt to generate turntable video via Amazon Nova Reel."""
+        turntable_prompt = (
+            f"Cinematic 360-degree turntable rotation of a luxury cosmetic product. {user_input}. "
+            f"The product has a label reading '{brand_name}'. "
+            "Professional studio product photography, smooth slow orbit. "
+            "Clean dark background, soft volumetric lighting. "
+            "NO HUMANS. NO FACES. Pure product turntable."
+        )
+
+        try:
+            import re as _re
+            safe_name = _re.sub(r'[^a-zA-Z0-9_\-]', '_', brand_name.replace(' ', '_').lower())
+            safe_name = _re.sub(r'_+', '_', safe_name).strip('_') or 'product'
+            s3_output_uri = f"s3://{s3_bucket}/forge-reel-outputs/{safe_name}/"
+
+            reel_client = boto3.client(
+                "bedrock-runtime",
+                region_name=AWS_REGION,
+                config=BotoConfig(retries={"max_attempts": 2, "mode": "adaptive"}, read_timeout=300),
+            )
+
+            # Build model input — use image-to-video if we have a Canvas/DALL-E image
+            text_to_video_params = {"text": turntable_prompt}
+
+            if canvas_image_path and os.path.exists(canvas_image_path):
+                console.print("  [bold cyan]Using product image as input frame for visual consistency![/bold cyan]")
+                try:
+                    from PIL import Image as PILImage
+                    import io
+                    img = PILImage.open(canvas_image_path).convert("RGB")
+                    img_resized = img.resize((720, 720), PILImage.LANCZOS)
+                    bg = PILImage.new("RGB", (1280, 720), (20, 20, 20))
+                    bg.paste(img_resized, (280, 0))
+                    buf = io.BytesIO()
+                    bg.save(buf, format="PNG")
+                    img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                    text_to_video_params["images"] = [
+                        {"format": "png", "source": {"bytes": img_b64}}
+                    ]
+                except Exception as img_exc:
+                    console.print(f"  [yellow]Could not use image: {img_exc}. Text-only mode.[/yellow]")
+
+            model_input = {
+                "taskType": "TEXT_VIDEO",
+                "textToVideoParams": text_to_video_params,
+                "videoGenerationConfig": {
+                    "durationSeconds": 6,
+                    "fps": 24,
+                    "dimension": "1280x720",
+                    "seed": 42,
+                },
+            }
+
+            console.print("  [dim]Starting Nova Reel turntable generation...[/dim]")
+
+            # Retry loop for capacity issues
+            invocation_arn = None
+            import time as _time
+            for attempt in range(5):
+                try:
+                    response = reel_client.start_async_invoke(
+                        modelId=NOVA_REEL_MODEL_ID,
+                        modelInput=model_input,
+                        outputDataConfig={"s3OutputDataConfig": {"s3Uri": s3_output_uri}},
+                    )
+                    invocation_arn = response["invocationArn"]
+                    console.print(f"  [dim]Nova Reel job started: {invocation_arn}[/dim]")
+                    break
+                except botocore.exceptions.ClientError as e:
+                    code = e.response['Error']['Code']
+                    if code in ['ServiceUnavailableException', 'ThrottlingException'] and attempt < 4:
+                        wait_time = (2 ** attempt) * 2 + 5
+                        console.print(f"  [yellow]Bedrock capacity full, retrying in {wait_time}s ({attempt+1}/5)...[/yellow]")
+                        _time.sleep(wait_time)
+                    else:
+                        raise
+
+            if not invocation_arn:
+                return None
+
+            # Poll for completion (up to 5 minutes)
+            for attempt in range(60):
+                _time.sleep(5)
+                status_resp = reel_client.get_async_invoke(invocationArn=invocation_arn)
+                status = status_resp.get("status", "")
+                console.print(f"  [dim]Nova Reel status: {status} ({attempt+1}/60)[/dim]")
+
+                if status == "Completed":
+                    s3_client = boto3.client("s3", region_name=AWS_REGION)
+                    output_uri = status_resp.get("outputDataConfig", {}).get("s3OutputDataConfig", {}).get("s3Uri", s3_output_uri)
+                    prefix = output_uri.replace(f"s3://{s3_bucket}/", "").rstrip('/')
+                    s3_key = f"{prefix}/output.mp4"
+                    local_path = os.path.join(output_dir, f"turntable_{safe_name}_{int(_time.time())}.mp4")
+                    s3_client.download_file(s3_bucket, s3_key, local_path)
+                    console.print(f"  [bold green]Nova Reel video saved: {local_path}[/bold green]")
+                    return local_path
+                elif status in ("Failed", "TimedOut"):
+                    reason = status_resp.get("failureMessage", "Unknown")
+                    console.print(f"  [yellow]Nova Reel failed: {reason}[/yellow]")
+                    return None
+
+            console.print("  [yellow]Nova Reel timed out after 5 minutes[/yellow]")
+            return None
+
+        except Exception as exc:
+            console.print(f"  [yellow]Nova Reel error ({type(exc).__name__}: {exc})[/yellow]")
+            return None
+
+    def _dalle_turntable_fallback(self, user_input: str, output_dir: str, brand_name: str) -> Optional[str]:
+        """Fallback: generate frames with DALL-E 3 and stitch into MP4."""
         try:
             import re as _re
             safe_name = _re.sub(r'[^a-zA-Z0-9_\-]', '_', brand_name.replace(' ', '_').lower())
@@ -1145,7 +1292,6 @@ class FormulaForge:
 
             console.print("  [dim]Generating DALL-E 3 turntable frames...[/dim]")
 
-            # Generate frames at different angles
             num_frames = 6
             angles = [int(i * (360 / num_frames)) for i in range(num_frames)]
             frame_images = []
@@ -1176,7 +1322,6 @@ class FormulaForge:
                     from PIL import Image as PILImage
                     import io
                     img = PILImage.open(io.BytesIO(img_data)).convert("RGB")
-                    # Resize to 720p for video
                     img = img.resize((1280, 720), PILImage.LANCZOS)
                     frame_images.append(img)
                 except Exception as frame_exc:
@@ -1186,16 +1331,12 @@ class FormulaForge:
                 console.print("  [yellow]Not enough frames for video. Need at least 2.[/yellow]")
                 return None
 
-            # Stitch frames into MP4 using imageio
             import imageio
             import numpy as np
 
             local_path = os.path.join(output_dir, f"turntable_{safe_name}_{int(time.time())}.mp4")
-
-            # Build smooth animation: forward + reverse for seamless loop
             all_frames = list(frame_images) + list(reversed(frame_images[1:-1]))
 
-            # Each frame shown for ~0.5 seconds at 12fps = 6 frames per image
             fps = 12
             frames_per_image = 6
             writer = imageio.get_writer(local_path, fps=fps, codec='libx264', quality=8)
@@ -1205,13 +1346,135 @@ class FormulaForge:
                     writer.append_data(arr)
             writer.close()
 
-            console.print(f"  [bold green]Turntable video saved: {local_path}[/bold green]")
+            console.print(f"  [bold green]DALL-E 3 turntable video saved: {local_path}[/bold green]")
             return local_path
 
         except Exception as exc:
-            console.print(f"  [yellow]Turntable video generation failed ({type(exc).__name__}: {exc})[/yellow]")
+            console.print(f"  [yellow]DALL-E 3 video fallback failed ({type(exc).__name__}: {exc})[/yellow]")
             return None
 
+    # ── Product Search with Real Prices ───────────────────────────────
+
+    def search_product_prices(self, concerns: list[str], skin_type: str = "", ingredients: list[str] = None) -> list[dict]:
+        """
+        Search for real skincare products with prices and purchase links.
+        Uses GPT-4o with web_search tool for current market data.
+        """
+        concerns_str = ", ".join(concerns) if concerns else "general skincare"
+        ingredients_str = ", ".join(ingredients[:5]) if ingredients else ""
+
+        prompt = (
+            f"Search for the TOP 5 best skincare products currently available for someone with "
+            f"skin type: {skin_type or 'combination'}, concerns: {concerns_str}. "
+            f"{'Preferred ingredients: ' + ingredients_str + '. ' if ingredients_str else ''}"
+            "\n\nFor EACH product, find:\n"
+            "- Exact product name and brand\n"
+            "- Current price on Amazon, Sephora, Ulta, or iHerb (check which is cheapest)\n"
+            "- Direct purchase URL\n"
+            "- Key active ingredients\n"
+            "- Why it's good for these specific concerns\n"
+            "- Rating out of 5 stars\n\n"
+            "Return ONLY a JSON array with this format:\n"
+            '[\n'
+            '  {\n'
+            '    "brand": "The Ordinary",\n'
+            '    "product": "Niacinamide 10% + Zinc 1%",\n'
+            '    "price": "$6.50",\n'
+            '    "cheapest_store": "Amazon",\n'
+            '    "buy_url": "https://www.amazon.com/...",\n'
+            '    "alt_prices": [{"store": "Sephora", "price": "$7.20", "url": "https://..."}],\n'
+            '    "key_ingredients": "Niacinamide, Zinc PCA",\n'
+            '    "why": "Controls oil production and minimizes pores",\n'
+            '    "rating": 4.5\n'
+            '  }\n'
+            ']\n'
+            "Output ONLY the JSON array, no markdown fences."
+        )
+
+        try:
+            # Use GPT-4o with web_search tool for real-time prices
+            resp = self.openai_client.client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {"role": "system", "content": "You are a skincare product researcher. Always provide real, accurate product information with current prices and working purchase URLs."},
+                    {"role": "user", "content": prompt},
+                ],
+                tools=[{"type": "web_search_preview"}],
+                max_tokens=2000,
+                temperature=0.2,
+            )
+
+            raw = resp.choices[0].message.content or "[]"
+            # Extract JSON array
+            match = re.search(r'\[[\s\S]*\]', raw)
+            if match:
+                products = json.loads(match.group())
+                return products
+            return []
+
+        except Exception as e:
+            console.print(f"  [yellow]Product search error: {e}[/yellow]")
+            # Fallback: use GPT-4o without web search to give recommendations
+            try:
+                raw = self.openai_client.invoke(
+                    prompt.replace("Search for", "Recommend"),
+                    system="You are a skincare expert. Provide product recommendations with estimated prices.",
+                    max_tokens=2000,
+                    json_mode=True,
+                )
+                match = re.search(r'\[[\s\S]*\]', raw)
+                if match:
+                    return json.loads(match.group())
+            except Exception:
+                pass
+            return []
+
+    # ── Ingredient Safety Checker ─────────────────────────────────────
+
+    def check_ingredient_safety(self, ingredients: list[dict]) -> list[dict]:
+        """
+        Check ingredients for safety concerns, regulatory issues, and conflicts.
+        Returns a list of safety alerts.
+        """
+        ingredients_str = json.dumps(ingredients[:20], indent=2)
+
+        prompt = (
+            f"Analyze these cosmetic ingredients for safety:\n{ingredients_str}\n\n"
+            "Check for:\n"
+            "1. EU/FDA regulatory restrictions or bans\n"
+            "2. Common allergens or sensitizers\n"
+            "3. Ingredient conflicts (ingredients that should NOT be combined)\n"
+            "4. Concentration concerns (too high or too low)\n"
+            "5. Photosensitivity warnings\n\n"
+            "Return a JSON array of alerts:\n"
+            '[\n'
+            '  {\n'
+            '    "ingredient": "Retinol",\n'
+            '    "severity": "warning",\n'
+            '    "type": "regulatory",\n'
+            '    "message": "Limited to 1% in EU cosmetics. Avoid during pregnancy.",\n'
+            '    "icon": "⚠️"\n'
+            '  }\n'
+            ']\n'
+            "Severity: 'info', 'warning', or 'danger'.\n"
+            "If everything is safe, return an empty array [].\n"
+            "Output ONLY the JSON array."
+        )
+
+        try:
+            raw = self.openai_client.invoke(
+                prompt,
+                system="You are a cosmetic safety regulatory expert. Be thorough but only flag real concerns.",
+                max_tokens=1500,
+                json_mode=True,
+            )
+            match = re.search(r'\[[\s\S]*\]', raw)
+            if match:
+                return json.loads(match.group())
+            return []
+        except Exception as e:
+            console.print(f"  [yellow]Safety check error: {e}[/yellow]")
+            return []
 
     def step_present(self, result: PipelineResult, output_dir: str = "outputs") -> str:
         """
