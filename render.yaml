@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: formula-forge
+    env: docker
+    region: ohio
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: OPENAI_API_KEY
+        sync: false  # You must set this manually in the Render dashboard

@@ -1,0 +1,4359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FORMULA FORGE</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0A0A0A;
+      --surface: #111111;
+      --text: #F5F0E8;
+      --text-muted: #8A8680;
+      --gold: #C9A84C;
+      --gold-dim: rgba(201, 168, 76, 0.3);
+      --red: #C45B5B;
+      --green: #6B9E6B;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'Montserrat', sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #FAF8F5;
+      --surface: #FFFFFF;
+      --text: #1A1A1A;
+      --text-muted: #6B6560;
+      --gold: #B8942E;
+      --gold-dim: rgba(184, 148, 46, 0.2);
+      --red: #C45B5B;
+      --green: #4A8B4A;
+    }
+
+    /* ── Theme Toggle ──────────────────────────────────────── */
+    .theme-toggle {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .theme-toggle:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-weight: 300;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Hero ───────────────────────────────────────────── */
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(201, 168, 76, 0.02) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      opacity: 0;
+      animation: fadeUp 1.2s ease forwards;
+    }
+
+    .hero-sub {
+      font-family: var(--font-display);
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 1.2s ease 0.3s forwards;
+    }
+
+    .hero-rule {
+      width: 80px;
+      height: 1px;
+      background: var(--gold);
+      border: none;
+      margin: 0 auto 1.5rem;
+      opacity: 0;
+      animation: fadeUp 1.2s ease 0.5s forwards;
+    }
+
+    .hero-powered {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0;
+      animation: fadeUp 1.2s ease 0.7s forwards;
+    }
+
+    /* Floating gold particles for premium ambiance */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 10% 20%, rgba(201, 168, 76, 0.4), transparent),
+        radial-gradient(1px 1px at 30% 70%, rgba(201, 168, 76, 0.3), transparent),
+        radial-gradient(2px 2px at 50% 40%, rgba(201, 168, 76, 0.35), transparent),
+        radial-gradient(1px 1px at 70% 15%, rgba(201, 168, 76, 0.25), transparent),
+        radial-gradient(1.5px 1.5px at 85% 60%, rgba(201, 168, 76, 0.3), transparent),
+        radial-gradient(2px 2px at 15% 85%, rgba(201, 168, 76, 0.2), transparent),
+        radial-gradient(1px 1px at 90% 90%, rgba(201, 168, 76, 0.3), transparent),
+        radial-gradient(1.5px 1.5px at 45% 95%, rgba(201, 168, 76, 0.25), transparent);
+      background-size: 200% 200%;
+      animation: particleDrift 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Molecular forging orbital ring */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 280px;
+      height: 280px;
+      margin: -140px 0 0 -140px;
+      border: 1px solid rgba(201, 168, 76, 0.12);
+      border-radius: 50%;
+      animation: molecularOrbit 12s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+      box-shadow:
+        0 0 40px rgba(201, 168, 76, 0.04),
+        inset 0 0 40px rgba(201, 168, 76, 0.02);
+    }
+
+    @keyframes molecularOrbit {
+      from {
+        transform: rotate(0deg) scale(1);
+      }
+
+      50% {
+        transform: rotate(180deg) scale(1.08);
+      }
+
+      to {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    .hero>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes particleDrift {
+      0% {
+        background-position: 0% 0%;
+      }
+
+      25% {
+        background-position: 100% 50%;
+      }
+
+      50% {
+        background-position: 50% 100%;
+      }
+
+      75% {
+        background-position: 0% 50%;
+      }
+
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── Container ──────────────────────────────────────── */
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+    }
+
+    /* ── Form ───────────────────────────────────────────── */
+
+    .form-section {
+      margin-bottom: 4rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+
+    .form-textarea {
+      width: 100%;
+      min-height: 120px;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 300;
+      padding: 1.2rem;
+      resize: vertical;
+      transition: border-color 0.3s;
+      outline: none;
+    }
+
+    .form-textarea:focus {
+      border-color: var(--gold);
+    }
+
+    .form-textarea::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .form-row>* {
+      flex: 1;
+    }
+
+    .form-input {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 300;
+      padding: 0.8rem 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .form-input:focus {
+      border-color: var(--gold);
+    }
+
+    .file-upload {
+      position: relative;
+      border: 1px solid var(--gold-dim);
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-upload:hover {
+      border-color: var(--gold);
+    }
+
+    .file-upload input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-upload-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-upload-icon {
+      color: var(--gold);
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .btn-generate {
+      display: block;
+      width: 100%;
+      margin-top: 2rem;
+      padding: 1rem;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-generate:hover {
+      background: var(--gold);
+      color: #0A0A0A;
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-generate:disabled:hover {
+      background: transparent;
+      color: var(--gold);
+    }
+
+    /* ── Pipeline Progress ──────────────────────────────── */
+
+    .pipeline {
+      display: none;
+      margin-bottom: 4rem;
+    }
+
+    .pipeline.active {
+      display: block;
+    }
+
+    .pipeline-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .pipeline-steps {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .pipeline-steps::before {
+      content: '';
+      position: absolute;
+      left: 0.45rem;
+      top: 0.5rem;
+      bottom: 0.5rem;
+      width: 1px;
+      background: var(--gold-dim);
+    }
+
+    .step {
+      position: relative;
+      padding: 0.6rem 0 0.6rem 1.2rem;
+      opacity: 0.25;
+      transition: opacity 0.5s ease;
+    }
+
+    .step.active {
+      opacity: 1;
+    }
+
+    .step.success {
+      opacity: 1;
+    }
+
+    .step.failed {
+      opacity: 1;
+    }
+
+    .step::before {
+      content: '';
+      position: absolute;
+      left: -1.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 9px;
+      height: 9px;
+      border: 1px solid var(--gold-dim);
+      background: var(--bg);
+      transition: all 0.4s;
+    }
+
+    .step.active::before {
+      border-color: var(--gold);
+      background: var(--gold);
+      box-shadow: 0 0 8px rgba(201, 168, 76, 0.4);
+      animation: pulse 1.5s ease infinite;
+    }
+
+    .step.success::before {
+      border-color: var(--green);
+      background: var(--green);
+      box-shadow: none;
+      animation: none;
+    }
+
+    .step.failed::before {
+      border-color: var(--red);
+      background: var(--red);
+      animation: none;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 4px rgba(201, 168, 76, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 12px rgba(201, 168, 76, 0.6);
+      }
+    }
+
+    .step-name {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    .step-detail {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Results ────────────────────────────────────────── */
+
+    .results {
+      display: none;
+    }
+
+    .results.active {
+      display: block;
+    }
+
+    .results-divider {
+      width: 60px;
+      height: 1px;
+      background: var(--gold);
+      margin: 3rem auto;
+    }
+
+    /* Mockup image */
+    .mockup-container {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .mockup-container img {
+      max-width: 320px;
+      width: 100%;
+      border: 1px solid var(--gold-dim);
+    }
+
+    /* Stat callouts */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 2.4rem;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-top: 0.5rem;
+      font-weight: 500;
+    }
+
+    /* Ingredient table */
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      margin-bottom: 1.2rem;
+    }
+
+    .ing-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 3rem;
+    }
+
+    .ing-table th {
+      font-size: 0.55rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      text-align: left;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--gold-dim);
+    }
+
+    .ing-table th:last-child {
+      text-align: right;
+    }
+
+    .ing-table td {
+      font-size: 0.85rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text);
+    }
+
+    .ing-table td:last-child {
+      text-align: right;
+      font-family: var(--font-display);
+      font-size: 1rem;
+    }
+
+    /* Interactions */
+    .interactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid;
+      position: relative;
+      opacity: 0;
+      animation: badgeEnter 0.4s ease forwards;
+    }
+
+    .badge:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .badge:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .badge:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .badge:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    .badge:nth-child(5) {
+      animation-delay: 0.5s;
+    }
+
+    .badge:nth-child(6) {
+      animation-delay: 0.6s;
+    }
+
+    @keyframes badgeEnter {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .badge-conflict {
+      color: var(--red);
+      border-color: var(--red);
+    }
+
+    .badge-synergy {
+      color: var(--green);
+      border-color: var(--green);
+      animation: badgeEnter 0.4s ease forwards, synergyPulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes synergyPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(104, 211, 145, 0);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 2px rgba(104, 211, 145, 0.15);
+      }
+    }
+
+    /* Animated connecting line between consecutive synergy badges */
+    .badge-synergy+.badge-synergy::before {
+      content: '—';
+      position: absolute;
+      left: -1.1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--green);
+      font-size: 0.5rem;
+      opacity: 0;
+      animation: bondLine 0.6s ease 0.5s forwards;
+    }
+
+    @keyframes bondLine {
+      from {
+        opacity: 0;
+        transform: translateY(-50%) scaleX(0);
+      }
+
+      to {
+        opacity: 0.5;
+        transform: translateY(-50%) scaleX(1);
+      }
+    }
+
+    /* Explanation */
+    .explanation {
+      border-left: 1px solid var(--gold-dim);
+      padding-left: 1.5rem;
+      margin-bottom: 3rem;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.8;
+      color: var(--text-muted);
+    }
+
+    /* Download button */
+    .btn-download {
+      display: block;
+      width: 100%;
+      padding: 1.1rem;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+      margin-bottom: 1rem;
+    }
+
+    .btn-download:hover {
+      background: var(--gold);
+      color: #0A0A0A;
+    }
+
+    /* ── Product Viewer Labels ──────────────────────────── */
+
+    .viewer-brand {
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+
+    .viewer-label {
+      text-align: center;
+      font-family: var(--font-body);
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ── Nova Reel Video Player ─────────────────────────── */
+
+    .viewer-video {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 3rem;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0a0a0a;
+      border: 1px solid rgba(201, 168, 76, 0.15);
+    }
+
+    .viewer-video video {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .viewer-video-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      color: var(--gold);
+      font-family: var(--font-body);
+      font-size: 0.45rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+
+    .footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .footer-text {
+      font-size: 0.55rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    /* ── Error ──────────────────────────────────────────── */
+    .error-msg {
+      background: rgba(196, 91, 91, 0.1);
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 1rem;
+      margin-bottom: 2rem;
+      font-size: 0.8rem;
+      display: none;
+    }
+
+    .error-msg.active {
+      display: block;
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .stats-row {
+        gap: 1.5rem;
+      }
+
+      .stat-value {
+        font-size: 1.8rem;
+      }
+    }
+
+    /* ── Output Stage ─────────────────────────────────────── */
+    .output-stage {
+      width: 100%;
+      min-height: 150px;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      display: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .output-stage.active {
+      display: flex;
+    }
+
+    .stage-content {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--text);
+      text-align: center;
+      z-index: 2;
+      animation: fadeUp 0.6s ease forwards;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #omni-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      z-index: 1;
+    }
+
+    #omni-capture-btn {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: none;
+      background: rgba(201, 168, 76, 0.9);
+      color: #0b0f19;
+      border: none;
+      border-radius: 20px;
+      padding: 0.5rem 1.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    #omni-capture-btn:hover {
+      background: #fff;
+    }
+
+    /* Text Chat UI Overlay */
+    .chat-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 15, 25, 0.85);
+      border-top: 1px solid var(--gold-dim);
+      padding: 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 5;
+    }
+
+    .output-stage.active .chat-overlay {
+      display: flex;
+    }
+
+    .chat-log {
+      max-height: 100px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      text-align: left;
+    }
+
+    .chat-msg {
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .chat-msg.user {
+      background: rgba(255, 255, 255, 0.05);
+      align-self: flex-end;
+      color: var(--gold);
+    }
+
+    .chat-msg.bot {
+      background: rgba(0, 0, 0, 0.3);
+      align-self: flex-start;
+    }
+
+    .chat-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--gold-dim);
+    }
+
+    .chat-send {
+      background: none;
+      border: none;
+      color: var(--gold);
+      cursor: pointer;
+    }
+
+    .voice-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+    }
+
+    .voice-toggle input {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .stage-content img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+
+    .stage-waveform {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0,10 Q25,0 50,10 T100,10 L100,20 L0,20 Z" fill="rgba(201, 168, 76, 0.15)"/></svg>') repeat-x;
+      background-size: 100px 40px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1;
+    }
+
+    .stage-waveform.speaking {
+      opacity: 1;
+      animation: waveMove 1.5s linear infinite;
+    }
+
+    @keyframes waveMove {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: -100px 0;
+      }
+    }
+
+    /* ── Nova Action Buttons ──────────────────────────────── */
+    .textarea-wrapper {
+      position: relative;
+    }
+
+    .nova-actions {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 100;
+      background: var(--surface);
+      padding: 1rem;
+      border-radius: 40px;
+      border: 1px solid var(--gold-dim);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-nova {
+      width: 56px;
+      height: auto;
+      min-height: 56px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 4px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-nova:hover {
+      background: rgba(201, 168, 76, 0.1);
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(201, 168, 76, 0.2);
+    }
+
+    .btn-nova svg.nova-icon {
+      width: 22px;
+      height: 22px;
+      transition: all 0.3s ease;
+    }
+
+    .fab-label {
+      font-size: 0.6rem;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+
+    .btn-nova.recording {
+      border-color: var(--red);
+      animation: micPulse 1.5s ease-in-out infinite;
+    }
+
+    .btn-nova.recording svg.nova-icon path,
+    .btn-nova.recording svg.nova-icon rect,
+    .btn-nova.recording svg.nova-icon line {
+      stroke: var(--red);
+    }
+
+    .btn-nova.omni-active,
+    .btn-nova.act-active {
+      border-color: var(--gold);
+      background: rgba(201, 168, 76, 0.2);
+      animation: pulseGlow 2s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 5px rgba(201, 168, 76, 0.2);
+      }
+
+      100% {
+        box-shadow: 0 0 15px rgba(201, 168, 76, 0.6);
+      }
+    }
+
+    @keyframes micPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(196, 91, 91, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 0 10px rgba(196, 91, 91, 0);
+      }
+    }
+
+    /* ── Nova Reel Countdown ─────────────────────────────── */
+    .reel-timer {
+      display: inline-block;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--gold);
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+
+    .reel-progress-bar {
+      height: 3px;
+      background: var(--gold-dim);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .reel-progress-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 2px;
+      transition: width 1s linear;
+      width: 0%;
+    }
+
+    /* ── Formula History ─────────────────────────────────── */
+    .history-section {
+      margin-top: 1rem;
+      border-top: 1px solid rgba(201, 168, 76, 0.15);
+      padding-top: 1rem;
+    }
+
+    .history-toggle {
+      background: none;
+      border: none;
+      color: var(--gold);
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .history-toggle:hover {
+      color: var(--text);
+    }
+
+    .history-list {
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    .history-list.open {
+      display: block;
+    }
+
+    .history-card {
+      background: var(--surface);
+      border: 1px solid rgba(201, 168, 76, 0.12);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .history-card:hover {
+      border-color: var(--gold-dim);
+      transform: translateX(4px);
+    }
+
+    .history-card-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .history-card-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    /* ── Share / Copy Buttons ────────────────────────────── */
+    .results-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      padding: 0.5rem 1.2rem;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid var(--gold-dim);
+      background: transparent;
+      color: var(--gold);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-action:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+
+    .btn-action.copied {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    /* ── Enhanced Safety Warnings ────────────────────────── */
+    .warning-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .warning-card {
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: var(--font-body);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: warnSlideIn 0.4s ease forwards;
+      opacity: 0;
+    }
+
+    .warning-card:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .warning-card:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .warning-card:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .warning-card:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes warnSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .warning-card.conflict {
+      background: rgba(196, 91, 91, 0.12);
+      border-left: 3px solid var(--red);
+      color: #e8a0a0;
+    }
+
+    .warning-card.synergy {
+      background: rgba(107, 158, 107, 0.12);
+      border-left: 3px solid var(--green);
+      color: #a0d8a0;
+    }
+
+    .warning-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .warning-text {
+      flex: 1;
+    }
+
+    .warning-pair {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ── Chatbot Panel ─────────────────────────────────── */
+    .chatbot-panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 16px;
+      padding: 0;
+      margin-bottom: 3rem;
+      overflow: hidden;
+      display: none;
+    }
+
+    .chatbot-panel.active {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .chatbot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--gold-dim);
+      background: rgba(201, 168, 76, 0.04);
+    }
+
+    .chatbot-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      margin: 0;
+    }
+
+    .chatbot-header .model-badge {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      background: rgba(201, 168, 76, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .chatbot-messages {
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      scroll-behavior: smooth;
+    }
+
+    .chatbot-msg {
+      max-width: 85%;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .chatbot-msg.user {
+      align-self: flex-end;
+      background: rgba(201, 168, 76, 0.12);
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+    }
+
+    .chatbot-msg.bot {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      border-left: 2px solid var(--gold-dim);
+    }
+
+    .chatbot-msg.bot .speaking-indicator {
+      display: inline-block;
+      animation: pulse 1s infinite;
+      color: var(--gold);
+      margin-left: 4px;
+    }
+
+    .chatbot-msg.system {
+      align-self: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
+    .chatbot-input-area {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.8rem 1.2rem;
+      border-top: 1px solid var(--gold-dim);
+      align-items: center;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .chatbot-text-input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--text);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .chatbot-text-input:focus {
+      border-color: var(--gold);
+    }
+
+    .chatbot-text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .chatbot-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-dim);
+      background: transparent;
+      color: var(--gold);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .chatbot-btn:hover {
+      background: var(--gold);
+      color: var(--bg);
+    }
+
+    .chatbot-btn.recording {
+      border-color: var(--red);
+      color: var(--red);
+      animation: micPulse 1.5s ease-in-out infinite;
+    }
+
+    .chatbot-btn.speaking {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ── Skin Analysis Panel ───────────────────────────── */
+    .skin-panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+      display: none;
+    }
+
+    .skin-panel.active {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .skin-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--gold-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .skin-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--gold);
+      margin: 0;
+    }
+
+    .skin-camera-area {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .skin-camera-area video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .skin-camera-area .camera-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .skin-camera-area .camera-placeholder svg {
+      width: 48px;
+      height: 48px;
+      color: var(--gold-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .skin-actions {
+      display: flex;
+      gap: 0.5rem;
+      padding: 1rem 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .skin-actions .btn-action {
+      flex: 1;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .skin-results {
+      padding: 1.2rem;
+      display: none;
+      border-top: 1px solid var(--gold-dim);
+    }
+
+    .skin-results.active {
+      display: block;
+    }
+
+    .skin-diagnosis {
+      background: rgba(201, 168, 76, 0.06);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .skin-diagnosis h4 {
+      color: var(--gold);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .skin-diagnosis p {
+      color: var(--text);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .skin-concerns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0.75rem 0;
+    }
+
+    .skin-concern-tag {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      background: rgba(196, 91, 91, 0.15);
+      color: var(--red);
+      border: 1px solid rgba(196, 91, 91, 0.3);
+    }
+
+    .skin-ingredient-card {
+      background: rgba(107, 158, 107, 0.08);
+      border-left: 3px solid var(--green);
+      padding: 0.6rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .skin-ingredient-card .ing-name {
+      font-weight: 500;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .skin-ingredient-card .ing-benefit {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.2rem;
+    }
+
+    .skin-tips {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: rgba(201, 168, 76, 0.05);
+      border-radius: 8px;
+    }
+
+    .skin-tips li {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+      list-style: none;
+      padding-left: 1rem;
+      position: relative;
+    }
+
+    .skin-tips li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-size: 0.6rem;
+      top: 2px;
+    }
+
+    /* ── Tabs ───────────────────────────────────────────── */
+    .results-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--gold-dim);
+      overflow-x: auto;
+    }
+
+    .results-tab {
+      padding: 0.75rem 1.2rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+
+    .results-tab:hover {
+      color: var(--text);
+    }
+
+    .results-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeUp 0.4s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ── Language Select ────────────────────────────────── */
+    .form-select {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.8rem 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C9A84C' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+    }
+
+    .form-select:focus {
+      border-color: var(--gold);
+    }
+
+    .form-select option {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* ── Spinner ────────────────────────────────────────── */
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--gold-dim);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes micPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(196, 91, 91, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 8px rgba(196, 91, 91, 0);
+      }
+    }
+
+    /* ── Formula Genome Radar ───────────────────────── */
+    .genome-section {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 16px;
+      display: none;
+    }
+
+    .genome-section.active {
+      display: block;
+      animation: fadeUp 0.6s ease;
+    }
+
+    .genome-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .genome-subtitle {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .genome-chart {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .genome-chart svg {
+      filter: drop-shadow(0 0 16px rgba(201, 168, 76, 0.15));
+    }
+
+    .genome-chart .radar-area {
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .genome-chart .radar-dot {
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .genome-chart .radar-dot:hover {
+      r: 7;
+      filter: drop-shadow(0 0 6px rgba(201, 168, 76, 0.8));
+    }
+
+    .genome-chart .axis-label {
+      font-size: 10px;
+      fill: var(--text-muted);
+      font-family: var(--font-body);
+    }
+
+    .genome-chart .axis-line {
+      stroke: var(--gold-dim);
+      stroke-width: 0.5;
+      opacity: 0.3;
+    }
+
+    .genome-chart .grid-line {
+      stroke: var(--gold-dim);
+      stroke-width: 0.3;
+      opacity: 0.15;
+      fill: none;
+    }
+
+    .genome-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .genome-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .genome-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .genome-insight {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(201, 168, 76, 0.04);
+      border-radius: 10px;
+      border-left: 3px solid var(--gold);
+    }
+
+    .genome-insight p {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .genome-insight .ai-badge {
+      display: inline-block;
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      color: var(--gold);
+      background: rgba(201, 168, 76, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    /* ── Panel Backdrop ──────────────────────────────── */
+    .panel-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 99;
+      backdrop-filter: blur(3px);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .panel-backdrop.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .chatbot-panel.active,
+    .skin-panel.active {
+      position: relative;
+      z-index: 100;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--gold-dim);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="panel-backdrop" id="panel-backdrop" onclick="closeAllPanels()"></div>
+
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">
+    <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+    <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" style="display:none">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  </button>
+
+  <svg width="0" height="0" style="position:absolute; visibility:hidden;">
+    <defs>
+      <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#E2C275" />
+        <stop offset="50%" stop-color="#C9A84C" />
+        <stop offset="100%" stop-color="#A6832B" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ── Hero ──────────────────────────────────────────── -->
+  <section class="hero">
+    <h1 class="hero-title">Formula Forge</h1>
+    <p class="hero-sub">Couture Cosmetic Intelligence</p>
+    <hr class="hero-rule">
+    <p class="hero-powered">Powered by Amazon Nova</p>
+  </section>
+
+  <!-- ── Main Content ─────────────────────────────────── -->
+  <div class="container">
+
+    <!-- Output Stage for Visuals & Agentic Actions -->
+    <div class="output-stage" id="output-stage">
+      <video id="omni-video" autoplay playsinline muted></video>
+      <button id="omni-capture-btn" onclick="captureOmniImage()">Capture Image</button>
+      <div class="stage-content" id="stage-content">Waiting for input...</div>
+      <div class="stage-waveform" id="stage-waveform"></div>
+
+      <!-- Interactive Chatbot UI -->
+      <div class="chat-overlay" id="chat-overlay">
+        <div class="chat-log" id="chat-log"></div>
+        <div class="chat-controls">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Chat with Nova..."
+            onkeypress="handleChatKey(event)">
+          <button class="chat-send" onclick="sendChatMessage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+          <label class="voice-toggle">
+            <input type="checkbox" id="voice-response-toggle" checked> Voice Resp.
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden canvas for Omni processing -->
+    <canvas id="omni-canvas" style="display:none;"></canvas>
+
+    <label class="form-label" for="goal">Describe Your Formula Goal</label>
+    <div class="textarea-wrapper">
+      <textarea class="form-textarea" id="goal"
+        placeholder="Anti-aging night cream with retinol and peptides for mature, sensitive skin..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label class="form-label" for="budget">Budget per 100g ($)</label>
+        <input class="form-input" type="number" id="budget" value="15" min="1" step="0.5">
+      </div>
+      <div>
+        <label class="form-label">Product Label (optional)</label>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <div class="file-upload" style="flex: 1;">
+            <span class="file-upload-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </span>
+            <span class="file-upload-text" id="file-name">Upload image...</span>
+            <input type="file" id="image-upload" accept="image/*">
+          </div>
+          <button class="btn-action" id="btn-scan" style="display: none;" onclick="scanImage()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12h4l2-9 5 18 3-13 4 4" />
+            </svg>
+            Scan Label
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-generate" id="btn-generate" onclick="startGeneration()">
+      Generate Formula
+    </button>
+
+    <!-- Formula History -->
+    <div class="history-section" id="history-section" style="display:none;">
+      <button class="history-toggle" onclick="toggleHistory()">
+        <span id="history-arrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span> Recent Formulas
+        <div class="history-list" id="history-list"></div>
+    </div>
+    </section>
+
+    <!-- Floating Action Bar -->
+    <div class="nova-actions" id="nova-actions">
+      <!-- Onboarding tooltip for first-time users -->
+      <div id="fab-tooltip"
+        style="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:12px;background:var(--surface);border:1px solid var(--gold);border-radius:10px;padding:0.6rem 1rem;white-space:nowrap;font-size:0.7rem;color:var(--gold);pointer-events:none;opacity:1;transition:opacity 1s ease;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+        ✨ Try these tools! Scan your skin or chat with AI
+        <div
+          style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:var(--surface);border-right:1px solid var(--gold);border-bottom:1px solid var(--gold);">
+        </div>
+      </div>
+
+      <button type="button" class="btn-nova" id="btn-nova-omni" onclick="openSkinPanel()"
+        title="Scan your skin with AI to get diagnosis & product recommendations">
+        <svg viewBox="0 0 24 24" fill="none" class="nova-icon" stroke="url(#gold-grad)">
+          <path
+            d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="12" cy="12" r="3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 9v1m0 4v1" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <span class="fab-label">Skin Scan</span>
+      </button>
+
+      <button type="button" class="btn-nova" id="btn-mic" onclick="openChatPanel()"
+        title="Chat with an AI formula chemist — text or voice">
+        <svg viewBox="0 0 24 24" fill="none" class="nova-icon" stroke="url(#gold-grad)">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round" />
+          <line x1="9" y1="10" x2="15" y2="10" stroke-width="1.5" stroke-linecap="round" />
+          <line x1="9" y1="14" x2="12" y2="14" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <span class="fab-label">Chat</span>
+      </button>
+    </div>
+
+    <!-- End Floating Action Bar -->
+
+    <!-- Error -->
+    <div class="error-msg" id="error-msg"></div>
+
+    <!-- Pipeline Progress -->
+    <section class="pipeline" id="pipeline">
+      <h2 class="pipeline-title">Forging Your Formula</h2>
+      <div class="pipeline-steps">
+        <div class="step" id="step-parse">
+          <div class="step-name">Parse</div>
+          <div class="step-detail" id="detail-parse">Inspecting Molecular Structure for Optimal Feasibility...</div>
+        </div>
+        <div class="step" id="step-optimize">
+          <div class="step-name">Optimize</div>
+          <div class="step-detail" id="detail-optimize">Executing Precision Formulation Algorithm...</div>
+        </div>
+        <div class="step" id="step-explain">
+          <div class="step-name">Explain</div>
+          <div class="step-detail" id="detail-explain">Rendering Client-Ready Scientific Narrative...</div>
+        </div>
+        <div class="step" id="step-evaluate">
+          <div class="step-name">Evaluate</div>
+          <div class="step-detail" id="detail-evaluate">Senior Chemist Peer Review &amp; Compliance Audit...</div>
+        </div>
+        <div class="step" id="step-reoptimize">
+          <div class="step-name">Re-Optimize</div>
+          <div class="step-detail" id="detail-reoptimize">Applying Agent-Refined Optimization Pass...</div>
+        </div>
+        <div class="step" id="step-compare">
+          <div class="step-name">Compare</div>
+          <div class="step-detail" id="detail-compare">Generating Comparative Formulation Intelligence Report...</div>
+        </div>
+        <div class="step" id="step-present">
+          <div class="step-name">Present</div>
+          <div class="step-detail" id="detail-present">Engineering Luxury Presentation Deck...</div>
+        </div>
+        <div class="step" id="step-novareel">
+          <div class="step-name">Nova Reel</div>
+          <div class="step-detail" id="detail-novareel">Rendering AI-Generated Turntable Video...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Skin Analysis Panel ──────────────────────── -->
+    <section class="skin-panel" id="skin-panel">
+      <div class="skin-header">
+        <h3>Nova Skin Analysis</h3>
+        <button class="btn-action" onclick="closeSkinPanel()"
+          style="padding:0.3rem 0.6rem;font-size:0.7rem;">Close</button>
+      </div>
+      <div class="skin-camera-area" id="skin-camera-area">
+        <video id="skin-video" autoplay playsinline muted style="display:none;"></video>
+        <canvas id="skin-canvas" style="display:none;"></canvas>
+        <div class="camera-placeholder" id="skin-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <div style="font-size:0.8rem;">Take a photo of your skin concern</div>
+          <div style="font-size:0.7rem;margin-top:0.3rem;">Use camera or upload an image</div>
+        </div>
+      </div>
+      <div class="skin-actions">
+        <button class="btn-action" onclick="startSkinCamera()" id="btn-skin-camera">Open Camera</button>
+        <button class="btn-action" onclick="captureSkinPhoto()" id="btn-skin-capture"
+          style="display:none;background:var(--gold);color:#0a0a0a;border-color:transparent;">Capture</button>
+        <button class="btn-action" onclick="document.getElementById('skin-file-input').click()">Upload Photo</button>
+        <input type="file" id="skin-file-input" accept="image/*" capture="environment" style="display:none;"
+          onchange="handleSkinUpload(this)">
+      </div>
+      <div class="skin-results" id="skin-results">
+        <div id="skin-loading" style="display:none;text-align:center;padding:2rem;">
+          <div class="loading-spinner"></div>
+          <div style="color:var(--gold);font-size:0.8rem;margin-top:0.75rem;">Nova is analyzing your skin...</div>
+        </div>
+        <div id="skin-report"></div>
+      </div>
+    </section>
+
+    <!-- ── Chatbot Panel ──────────────────────────────── -->
+    <section class="chatbot-panel" id="chatbot-panel">
+      <div class="chatbot-header">
+        <h3>Formula Chemist Chat</h3>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <label
+            style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.7rem;color:var(--text-muted);">
+            <input type="checkbox" id="chat-voice-toggle" style="accent-color:var(--gold);">
+            Voice Response
+          </label>
+          <span class="model-badge">Nova Micro</span>
+          <button class="btn-action" onclick="closeChatPanel()"
+            style="padding:0.3rem 0.6rem;font-size:0.7rem;margin-left:0.5rem;">Close</button>
+        </div>
+      </div>
+      <div class="chatbot-messages" id="chatbot-messages">
+        <div class="chatbot-msg system">Ask me anything about your formula, ingredients, or skincare science.</div>
+      </div>
+      <div class="chatbot-input-area">
+        <input type="text" class="chatbot-text-input" id="chatbot-input" placeholder="Ask about your formula..."
+          onkeydown="if(event.key==='Enter')sendChatbotMessage()">
+        <button class="chatbot-btn" id="chatbot-mic-btn" onclick="toggleChatMic()" title="Hold to speak">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+            <path d="M19 10v2a7 7 0 01-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+        </button>
+        <button class="chatbot-btn" onclick="sendChatbotMessage()" title="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="results" id="results">
+      <div class="results-divider"></div>
+
+      <!-- Nova Reel Turntable Video -->
+      <div id="viewer-video-section" style="display:none;">
+        <div class="viewer-brand" id="viewer-video-brand"></div>
+        <div class="viewer-label">AI-Generated Turntable — Nova Reel</div>
+        <div class="viewer-video" id="viewer-video">
+          <video id="turntable-video" autoplay loop muted playsinline></video>
+          <div class="viewer-video-badge">Nova Reel</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-value" id="res-score">--</div>
+          <div class="stat-label">Performance Score</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="res-cost">--</div>
+          <div class="stat-label">Cost / 100g</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="res-count">--</div>
+          <div class="stat-label">Ingredients</div>
+        </div>
+      </div>
+
+      <!-- Formula Genome Radar Chart -->
+      <div class="genome-section" id="genome-section">
+        <div class="genome-title">Formula Genome</div>
+        <div class="genome-subtitle">AI-Powered Multi-Dimensional Analysis</div>
+        <div class="genome-chart" id="genome-chart"></div>
+        <div class="genome-legend" id="genome-legend"></div>
+        <div class="genome-insight" id="genome-insight" style="display:none;">
+          <span class="ai-badge">Nova AI Insight</span>
+          <p id="genome-insight-text"></p>
+        </div>
+      </div>
+
+      <!-- Ingredients Table -->
+      <h3 class="section-title">Optimized Ingredients</h3>
+      <table class="ing-table">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody id="ing-tbody"></tbody>
+      </table>
+
+      <!-- Interactions -->
+      <div id="interactions-section" style="display:none;">
+        <h3 class="section-title">Interactions</h3>
+        <div class="warning-cards" id="interactions-list"></div>
+      </div>
+
+      <!-- Explanation -->
+      <h3 class="section-title">Scientific Analysis</h3>
+      <div class="explanation" id="explanation-text"></div>
+
+      <!-- QR Code for Marketing Brochure -->
+      <div class="qr-code-section" id="qr-code-section" style="display:none; text-align: center; margin-bottom: 2rem;">
+        <h3 class="section-title">Digital Formula Pass (Download Report)</h3>
+        <img id="qr-code" src="" alt="Formula QR Code"
+          style="background: white; padding: 10px; border-radius: 8px; width: 150px; height: 150px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <p style="font-size: 0.8rem; color: var(--gold); margin-top: 0.5rem;">Scan to download the Marketing Brochure
+        </p>
+      </div>
+
+      <!-- Download -->
+      <a class="btn-download" id="btn-download" href="#" style="display:none;">
+        Download Presentation &#8595;
+      </a>
+
+      <!-- Share / Copy Actions -->
+      <div class="results-actions" id="results-actions" style="display:none;">
+        <button class="btn-action" id="btn-copy" onclick="copyResults()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+          </svg>
+          Copy Summary
+        </button>
+        <button class="btn-action" id="btn-download-pdf" onclick="downloadPDF()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="12" y1="18" x2="12" y2="12" />
+            <polyline points="9 15 12 18 15 15" />
+          </svg>
+          Download Report
+        </button>
+        <button class="btn-action" id="btn-download-marketing" onclick="downloadMarketingPDF()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+          </svg>
+          Marketing Brochure
+        </button>
+        <button class="btn-action" onclick="$('#teardown-hidden-input').click()"
+          style="background: linear-gradient(45deg, var(--gold), #bd9132); color: #0A0A0A; border-color: transparent;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 12h4l2-9 5 18 3-13 4 4" />
+          </svg>
+          Analyze Competitor
+        </button>
+        <button class="btn-action" onclick="openOutreachModal()" style="border-color: var(--gold); color: var(--gold);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          Factory Outreach
+        </button>
+      </div>
+
+      <input type="file" id="teardown-hidden-input" accept="image/*" style="display:none;"
+        onchange="runCompetitorTeardown(this)">
+      <div id="teardown-loading" style="display: none; text-align: center; color: var(--gold); margin-top:1rem;">
+        <div class="spinner"
+          style="margin: 0 auto 1rem; width: 30px; height: 30px; border: 3px solid rgba(201,168,76,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite;">
+        </div>
+        Scanning competitor label with Nova Vision...
+      </div>
+
+      <div class="results-divider"></div>
+    </section>
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────── -->
+  <footer class="footer">
+    <p class="footer-text">Sami &amp; Valerie &nbsp;&middot;&nbsp; Amazon Nova Hackathon</p>
+  </footer>
+
+  <!-- ── Script ───────────────────────────────────────── -->
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // File upload label
+    $('#image-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const name = file?.name || 'Upload image...';
+      $('#file-name').textContent = name;
+      $('#btn-scan').style.display = file ? 'inline-flex' : 'none';
+    });
+
+    async function scanImage() {
+      const fileInput = $('#image-upload');
+      if (fileInput.files.length === 0) return;
+
+      const btn = $('#btn-scan');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/></svg> Scanning...`;
+      btn.disabled = true;
+
+      try {
+        const fd = new FormData();
+        fd.append('image', fileInput.files[0]);
+        const resp = await fetch('/scan_image', { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error('Failed to scan image');
+
+        const data = await resp.json();
+        if (data.goal) {
+          const goalEl = $('#goal');
+          goalEl.value = data.goal;
+          goalEl.classList.add('flash-highlight');
+          setTimeout(() => goalEl.classList.remove('flash-highlight'), 1000);
+        }
+      } catch (err) {
+        showError('Vision Scan Failed: ' + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const el = $('#error-msg');
+      el.textContent = msg;
+      el.classList.add('active');
+    }
+
+    function hideError() {
+      $('#error-msg').classList.remove('active');
+    }
+
+    function resetUI() {
+      hideError();
+      $$('.step').forEach(s => s.className = 'step');
+      $('#pipeline').classList.remove('active');
+      $('#results').classList.remove('active');
+      $('#btn-download').style.display = 'none';
+      $('#interactions-section').style.display = 'none';
+      $('#ing-tbody').innerHTML = '';
+      $('#interactions-list').innerHTML = '';
+      // Reset video player
+      const videoEl = $('#turntable-video');
+      if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); }
+      $('#viewer-video-section').style.display = 'none';
+
+      // Reset share buttons
+      $('#results-actions').style.display = 'none';
+      window._lastResultData = null;
+    }
+
+    function updateStep(name, status, detail) {
+      const el = $(`#step-${name}`);
+      if (!el) return;
+
+      el.className = `step ${status}`;
+
+      if (detail) {
+        const detailEl = $(`#detail-${name}`);
+        if (detailEl) detailEl.textContent = detail;
+      }
+    }
+
+    function renderResults(data) {
+      const formula = data.formula_v2 || data.formula_v1;
+      if (!formula) return;
+
+      // Stats
+      $('#res-score').textContent = formula.performance_score;
+      $('#res-cost').textContent = '$' + formula.total_cost;
+      const ingCount = Object.values(formula.ingredients).filter(v => v > 0.001).length;
+      $('#res-count').textContent = ingCount;
+
+      // Table
+      const sorted = Object.entries(formula.ingredients)
+        .filter(([, v]) => v > 0.001)
+        .sort((a, b) => b[1] - a[1]);
+
+      const tbody = $('#ing-tbody');
+      sorted.forEach(([name, pct]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${name}</td><td>${pct.toFixed(2)}%</td>`;
+        tbody.appendChild(tr);
+      });
+
+      // Interactions
+      const interactions = data.interactions || [];
+      if (interactions.length > 0) {
+        $('#interactions-section').style.display = 'block';
+        const list = $('#interactions-list');
+        interactions.forEach(inter => {
+          const isConflict = inter.type === 'conflict';
+          const iconSvg = isConflict
+            ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+            : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+          const card = document.createElement('div');
+          card.className = `warning-card ${isConflict ? 'conflict' : 'synergy'}`;
+          card.innerHTML = `
+            <span class="warning-icon">${iconSvg}</span>
+            <span class="warning-text">
+              <span class="warning-pair">${inter.a} + ${inter.b}</span>
+              ${inter.note ? '<br>' + inter.note : ''}
+            </span>
+          `;
+          list.appendChild(card);
+        });
+      }
+
+      // Explanation
+      $('#explanation-text').textContent = data.explanation || '';
+
+      // Nova Reel Turntable Video (primary product viewer)
+      if (data.turntable_video) {
+        const videoSection = $('#viewer-video-section');
+        const videoBrand = $('#viewer-video-brand');
+        const videoEl = $('#turntable-video');
+        videoSection.style.display = 'block';
+        videoBrand.textContent = data.brand_name || data.user_input || 'Formula';
+        videoEl.src = `/video/${data.turntable_video}`;
+        videoEl.play();
+      }
+
+      // Download
+      if (data.pptx_filename) {
+        const btn = $('#btn-download');
+        btn.href = `/download/${data.pptx_filename}`;
+        btn.style.display = 'block';
+
+        // Generate QR code for the direct download link
+        const qrSection = $('#qr-code-section');
+        const dlUrl = window.location.origin + `/download/${data.pptx_filename}`;
+        $('#qr-code').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(dlUrl)}`;
+        qrSection.style.display = 'block';
+      }
+
+      // Show share/copy buttons
+      $('#results-actions').style.display = 'flex';
+      window._lastResultData = data;
+
+      // Save to history
+      saveToHistory(data);
+
+      // Render Formula Genome Radar Chart
+      renderGenomeChart(data);
+
+      $('#results').classList.add('active');
+    }
+
+    // ── Three.js 3D Product Viewer ─────────────────────────
+    function init3DViewer(brandName, palette, productImageUrl) {
+      const section = $('#viewer-3d-section');
+      const container = $('#viewer-3d');
+      const brandEl = $('#viewer-brand-name');
+
+      section.style.display = 'block';
+      brandEl.textContent = brandName;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight || width;
+
+      // Parse palette colors
+      const prim = palette.primary ? parseInt(palette.primary, 16) : 0x4A1942;
+      const sec = palette.secondary ? parseInt(palette.secondary, 16) : 0xA26769;
+      const gld = palette.gold ? parseInt(palette.gold, 16) : 0xD4A855;
+
+      // Scene setup
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+      camera.position.set(0, 1.5, 6);
+      camera.lookAt(0, 1.0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      container.insertBefore(renderer.domElement, container.firstChild);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xfff8f0, 0.9);
+      keyLight.position.set(3, 5, 4);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xd0e8ff, 0.4);
+      fillLight.position.set(-3, 3, 2);
+      scene.add(fillLight);
+
+      const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      rimLight.position.set(0, 2, -5);
+      scene.add(rimLight);
+
+      const spotLight = new THREE.SpotLight(0xfff0dd, 0.5, 20, Math.PI / 6, 0.5);
+      spotLight.position.set(0, 8, 3);
+      scene.add(spotLight);
+
+      // Floor/pedestal reflection
+      const pedestalGeo = new THREE.CylinderGeometry(0.8, 0.9, 0.06, 64);
+      const pedestalMat = new THREE.MeshStandardMaterial({
+        color: 0x1a1a1a, metalness: 0.8, roughness: 0.2
+      });
+      const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+      pedestal.position.y = -0.04;
+      scene.add(pedestal);
+
+      // Bottle Group
+      const bottleGroup = new THREE.Group();
+
+      // ── 6 Distinct Bottle Profiles ──────────────────────
+      // Each profile: { body, cap, labelY, labelR, ringY, ringR, baseRingY, baseRingR }
+      function V(x, y) { return new THREE.Vector2(x, y); }
+
+      const profiles = [
+        // 0: Tall Slim Perfume Flacon
+        {
+          body: [V(0, 0), V(0.3, 0), V(0.32, 0.05), V(0.35, 0.2), V(0.38, 0.8), V(0.38, 1.6), V(0.36, 2.2), V(0.30, 2.6), V(0.18, 2.9), V(0.14, 3.0), V(0.13, 3.3), V(0.14, 3.35), V(0.14, 3.38), V(0.12, 3.38), V(0, 3.38)],
+          cap: [V(0, 3.38), V(0.18, 3.38), V(0.19, 3.40), V(0.19, 3.65), V(0.17, 3.70), V(0.12, 3.72), V(0, 3.72)],
+          labelY: 1.4, labelR: 0.39, ringY: 2.6, ringR: 0.30, baseRingY: 0.15, baseRingR: 0.34
+        },
+        // 1: Wide Squat Cream Jar
+        {
+          body: [V(0, 0), V(0.7, 0), V(0.75, 0.05), V(0.78, 0.15), V(0.80, 0.4), V(0.80, 0.8), V(0.78, 1.0), V(0.72, 1.15), V(0.55, 1.3), V(0.40, 1.38), V(0.35, 1.42), V(0.35, 1.55), V(0.36, 1.58), V(0.36, 1.60), V(0.33, 1.60), V(0, 1.60)],
+          cap: [V(0, 1.60), V(0.42, 1.60), V(0.44, 1.62), V(0.44, 1.82), V(0.42, 1.86), V(0.38, 1.90), V(0.20, 1.92), V(0, 1.92)],
+          labelY: 0.6, labelR: 0.81, ringY: 1.15, ringR: 0.72, baseRingY: 0.08, baseRingR: 0.76
+        },
+        // 2: Angular Geometric Flask
+        {
+          body: [V(0, 0), V(0.50, 0), V(0.52, 0.05), V(0.55, 0.10), V(0.58, 0.50), V(0.45, 1.0), V(0.55, 1.5), V(0.42, 2.0), V(0.30, 2.2), V(0.20, 2.35), V(0.18, 2.50), V(0.18, 2.70), V(0.20, 2.72), V(0.20, 2.75), V(0.16, 2.75), V(0, 2.75)],
+          cap: [V(0, 2.75), V(0.24, 2.75), V(0.26, 2.77), V(0.22, 3.10), V(0.18, 3.15), V(0.25, 3.18), V(0.22, 3.22), V(0, 3.22)],
+          labelY: 1.25, labelR: 0.50, ringY: 2.0, ringR: 0.42, baseRingY: 0.08, baseRingR: 0.53
+        },
+        // 3: Round Dropper Bottle
+        {
+          body: [V(0, 0), V(0.35, 0), V(0.40, 0.08), V(0.50, 0.3), V(0.55, 0.7), V(0.55, 1.0), V(0.50, 1.3), V(0.38, 1.55), V(0.22, 1.7), V(0.15, 1.85), V(0.12, 2.1), V(0.12, 2.5), V(0.13, 2.52), V(0.13, 2.55), V(0.10, 2.55), V(0, 2.55)],
+          cap: [V(0, 2.55), V(0.17, 2.55), V(0.18, 2.58), V(0.16, 2.80), V(0.08, 2.95), V(0.04, 3.20), V(0.02, 3.35), V(0, 3.38)],
+          labelY: 0.85, labelR: 0.56, ringY: 1.55, ringR: 0.38, baseRingY: 0.06, baseRingR: 0.38
+        },
+        // 4: Hourglass Luxury Bottle
+        {
+          body: [V(0, 0), V(0.50, 0), V(0.55, 0.08), V(0.58, 0.3), V(0.55, 0.7), V(0.38, 1.0), V(0.32, 1.2), V(0.38, 1.5), V(0.55, 1.8), V(0.58, 2.0), V(0.55, 2.3), V(0.40, 2.5), V(0.25, 2.6), V(0.20, 2.7), V(0.20, 2.85), V(0.22, 2.88), V(0.22, 2.90), V(0.18, 2.90), V(0, 2.90)],
+          cap: [V(0, 2.90), V(0.26, 2.90), V(0.28, 2.92), V(0.28, 3.12), V(0.26, 3.18), V(0.20, 3.20), V(0, 3.20)],
+          labelY: 1.2, labelR: 0.34, ringY: 2.0, ringR: 0.56, baseRingY: 0.08, baseRingR: 0.54
+        },
+        // 5: Cone-Top Luxury Decanter
+        {
+          body: [V(0, 0), V(0.60, 0), V(0.65, 0.06), V(0.68, 0.2), V(0.70, 0.6), V(0.70, 1.0), V(0.68, 1.3), V(0.60, 1.6), V(0.45, 1.9), V(0.30, 2.1), V(0.18, 2.25), V(0.12, 2.4), V(0.08, 2.6), V(0.06, 2.8), V(0.06, 2.85), V(0.08, 2.88), V(0.08, 2.90), V(0.05, 2.90), V(0, 2.90)],
+          cap: [V(0, 2.90), V(0.12, 2.90), V(0.14, 2.92), V(0.15, 3.00), V(0.20, 3.05), V(0.18, 3.15), V(0.10, 3.20), V(0, 3.20)],
+          labelY: 0.8, labelR: 0.71, ringY: 1.6, ringR: 0.60, baseRingY: 0.08, baseRingR: 0.66
+        },
+      ];
+
+      // Hash brand name to pick a profile
+      let hash = 0;
+      for (let i = 0; i < brandName.length; i++) {
+        hash = ((hash << 5) - hash + brandName.charCodeAt(i)) | 0;
+      }
+      const profileIdx = Math.abs(hash) % profiles.length;
+      const P = profiles[profileIdx];
+
+      // Body
+      const bodyGeo = new THREE.LatheGeometry(P.body, 64);
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: prim,
+        metalness: 0.85,
+        roughness: 0.12,
+        envMapIntensity: 2.0,
+      });
+      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+      bottleGroup.add(bodyMesh);
+
+      // Cap
+      const capGeo = new THREE.LatheGeometry(P.cap, 64);
+      const capMat = new THREE.MeshStandardMaterial({
+        color: gld,
+        metalness: 0.95,
+        roughness: 0.15,
+        envMapIntensity: 2.0,
+      });
+      const capMesh = new THREE.Mesh(capGeo, capMat);
+      bottleGroup.add(capMesh);
+
+      // Label band
+      const labelGeo = new THREE.CylinderGeometry(P.labelR, P.labelR, 0.4, 64, 1, true);
+      const labelMat = new THREE.MeshStandardMaterial({
+        color: sec,
+        metalness: 0.7,
+        roughness: 0.2,
+        envMapIntensity: 1.5,
+      });
+      const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+      labelMesh.position.y = P.labelY;
+      bottleGroup.add(labelMesh);
+
+      // Brand text on label using canvas texture
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 512;
+      labelCanvas.height = 128;
+      const ctx = labelCanvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 512, 128);
+      ctx.fillStyle = '#' + (palette.gold || 'D4A855');
+      ctx.font = '600 26px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const displayName = brandName.length > 20 ? brandName.substring(0, 18) + '..' : brandName;
+      ctx.fillText(displayName.toUpperCase(), 256, 54);
+      ctx.strokeStyle = '#' + (palette.gold || 'D4A855');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(160, 80);
+      ctx.lineTo(352, 80);
+      ctx.stroke();
+
+      const labelTexture = new THREE.CanvasTexture(labelCanvas);
+      const textLabelGeo = new THREE.CylinderGeometry(P.labelR + 0.005, P.labelR + 0.005, 0.35, 64, 1, true);
+      const textLabelMat = new THREE.MeshBasicMaterial({
+        map: labelTexture,
+        transparent: true,
+        side: THREE.FrontSide,
+        depthWrite: false,
+      });
+      const textLabelMesh = new THREE.Mesh(textLabelGeo, textLabelMat);
+      textLabelMesh.position.y = P.labelY;
+      bottleGroup.add(textLabelMesh);
+
+      // Gold ring at shoulder
+      const ringGeo = new THREE.TorusGeometry(P.ringR, 0.008, 8, 64);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: gld, metalness: 0.95, roughness: 0.1
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = P.ringY;
+      bottleGroup.add(ring);
+
+      // Gold ring at base
+      const baseRingGeo = new THREE.TorusGeometry(P.baseRingR, 0.008, 8, 64);
+      const baseRing = new THREE.Mesh(baseRingGeo, ringMat.clone());
+      baseRing.rotation.x = Math.PI / 2;
+      baseRing.position.y = P.baseRingY;
+      bottleGroup.add(baseRing);
+
+      // Scale down and center
+      bottleGroup.scale.set(0.6, 0.6, 0.6);
+      bottleGroup.position.y = 0;
+      scene.add(bottleGroup);
+
+      // Mouse interaction
+      let isDragging = false;
+      let previousX = 0;
+      let rotationVelocity = 0;
+      let autoRotate = true;
+
+      container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousX = e.clientX;
+        rotationVelocity = 0;
+        autoRotate = false;
+        container.classList.add('dragging');
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - previousX;
+        rotationVelocity = deltaX * 0.008;
+        bottleGroup.rotation.y += rotationVelocity;
+        previousX = e.clientX;
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        container.classList.remove('dragging');
+      });
+
+      // Touch support
+      container.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        previousX = e.touches[0].clientX;
+        rotationVelocity = 0;
+        autoRotate = false;
+        container.classList.add('dragging');
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.touches[0].clientX - previousX;
+        rotationVelocity = deltaX * 0.008;
+        bottleGroup.rotation.y += rotationVelocity;
+        previousX = e.touches[0].clientX;
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => {
+        isDragging = false;
+        container.classList.remove('dragging');
+      });
+
+      // Animation loop with momentum
+      function animate() {
+        requestAnimationFrame(animate);
+
+        if (!isDragging) {
+          // Momentum decay
+          rotationVelocity *= 0.96;
+          bottleGroup.rotation.y += rotationVelocity;
+
+          // Auto-rotate when idle
+          if (Math.abs(rotationVelocity) < 0.0005) {
+            autoRotate = true;
+          }
+          if (autoRotate) {
+            bottleGroup.rotation.y += 0.003;
+          }
+        }
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle resize
+      const resizeObserver = new ResizeObserver(() => {
+        const w = container.clientWidth;
+        const h = container.clientHeight || w;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+      resizeObserver.observe(container);
+    }
+
+    async function startGeneration() {
+      const goal = $('#goal').value.trim();
+      if (!goal) {
+        showError('Please describe your formula goal.');
+        return;
+      }
+
+      resetUI();
+      $('#btn-generate').disabled = true;
+      $('#btn-generate').textContent = 'FORGING...';
+      $('#pipeline').classList.add('active');
+
+      try {
+        // Build form data
+        const fd = new FormData();
+        fd.append('user_input', goal);
+        fd.append('budget', $('#budget').value || '15');
+        const fileInput = $('#image-upload');
+        if (fileInput.files.length > 0) {
+          fd.append('image', fileInput.files[0]);
+        }
+
+        // Start generation
+        const resp = await fetch('/generate', { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+        const { job_id } = await resp.json();
+
+        // Connect to SSE stream
+        const evtSource = new EventSource(`/events?client_id=${job_id}`);
+        evtSource.onmessage = (e) => {
+          const event = JSON.parse(e.data);
+          const { step, status, data } = event;
+
+          if (step === 'done') {
+            evtSource.close();
+            renderResults(data);
+            $('#btn-generate').disabled = false;
+            $('#btn-generate').textContent = 'GENERATE FORMULA';
+            return;
+          }
+
+          if (step === 'error') {
+            evtSource.close();
+            showError(data.error || 'Pipeline failed');
+            $('#btn-generate').disabled = false;
+            $('#btn-generate').textContent = 'GENERATE FORMULA';
+            return;
+          }
+
+          // Map step to UI
+          let detail = '';
+          if (status === 'success') {
+            if (step === 'parse') detail = `${data.count} ingredients found`;
+            else if (step === 'optimize') detail = `Score: ${data.score} | $${data.cost}/100g`;
+            else if (step === 'explain') detail = 'Analysis complete';
+            else if (step === 'evaluate') detail = `${data.refinement_count || 0} refinements`;
+            else if (step === 'reoptimize') detail = `Score: ${data.score} | $${data.cost}/100g`;
+            else if (step === 'compare') detail = 'Delta analysis complete';
+            else if (step === 'present') detail = data.pptx_filename || 'Deck ready';
+            else if (step === 'novareel') detail = data.turntable ? 'Turntable video ready <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-left: 4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : 'Video generation complete';
+            else detail = 'Complete';
+          } else if (status === 'running') {
+            detail = data.detail || 'Processing...';
+            // Start countdown timer for Nova Reel
+            if (step === 'novareel') startReelTimer();
+          } else if (status === 'skipped') {
+            detail = 'Skipped';
+            status = 'success';
+          } else if (status === 'failed') {
+            detail = data.error || 'Failed';
+          }
+
+          updateStep(step, status === 'running' ? 'active' : status, detail);
+          // Stop countdown timer when Nova Reel finishes
+          if (step === 'novareel' && status !== 'running') stopReelTimer();
+        };
+
+        evtSource.onerror = () => {
+          evtSource.close();
+          $('#btn-generate').disabled = false;
+          $('#btn-generate').textContent = 'GENERATE FORMULA';
+        };
+
+      } catch (err) {
+        showError(err.message);
+        $('#btn-generate').disabled = false;
+        $('#btn-generate').textContent = 'GENERATE FORMULA';
+      }
+    }
+
+    // ── Nova 2 Sonic (S2S), Omni, and Act ────────────────────────
+    let s2sSocket = null;
+    let audioContext = null;
+    let micStream = null;
+    let isS2SActive = false;
+    let analyser = null;
+    let bargeInThreshold = 0.05; // adjust based on volume tests
+    let currentAudioSource = null;
+    let isBotSpeaking = false;
+    let isUserSpeaking = false;
+    let _speechTimeout = null;
+
+    async function initS2S() {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          // Ensure echo cancellation is enabled for 2-way audio
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(micStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        // VAD & Barge-in monitor loop
+        function monitorAudio() {
+          if (!isS2SActive) return;
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          let volume = sum / dataArray.length / 255.0;
+
+          if (isBotSpeaking) {
+            // Barge-in check
+            if (volume > bargeInThreshold) {
+              if (currentAudioSource) {
+                try { currentAudioSource.stop(); } catch (e) { }
+                currentAudioSource = null;
+                isBotSpeaking = false;
+                $('#stage-waveform').classList.remove('speaking');
+                console.log("Barge-in triggered. Bot stopped speaking.");
+              }
+            }
+          } else {
+            // Voice Activity Detection (VAD)
+            const speechThreshold = 0.02; // lower threshold for user speech
+            if (volume > speechThreshold) {
+              if (!isUserSpeaking) {
+                isUserSpeaking = true;
+                console.log("User started speaking...");
+                // Update visual to show active listening
+                const stageContent = $('#stage-content');
+                if (stageContent && stageContent.innerHTML.includes("Listening")) {
+                  stageContent.innerHTML = `
+                       <div style="display:flex; align-items:center; gap:0.5rem; color:var(--gold);">
+                         <div style="width:12px; height:12px; background:var(--gold); border-radius:50%; animation:pulse 0.5s infinite;"></div>
+                         Receiving audio...
+                       </div>
+                     `;
+                }
+              }
+              if (_speechTimeout) {
+                clearTimeout(_speechTimeout);
+                _speechTimeout = null;
+              }
+            } else if (isUserSpeaking && !_speechTimeout) {
+              // User stopped speaking, start silence timer
+              _speechTimeout = setTimeout(() => {
+                isUserSpeaking = false;
+                console.log("User stopped speaking. Finalizing transmission...");
+                // Send native audio marker to backend
+                if (s2sSocket && s2sSocket.readyState === WebSocket.OPEN) {
+                  const wantVoice = $('#voice-response-toggle') ? $('#voice-response-toggle').checked : true;
+
+                  // Update UI
+                  $('#stage-content').innerHTML = `
+                      <div style="font-size:0.9rem; color:var(--text-muted);">
+                         Audio processed. Generating response...
+                      </div>
+                   `;
+
+                  // Let backend know we finished an audio phrase
+                  s2sSocket.send(JSON.stringify({
+                    type: "chat_message",
+                    text: "User spoke via microphone natively [transcription simulated]",
+                    voice_response: wantVoice
+                  }));
+                }
+              }, 1500); // 1.5s of silence triggers sending
+            }
+          }
+
+          requestAnimationFrame(monitorAudio);
+        }
+        monitorAudio();
+
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        s2sSocket = new WebSocket(`${protocol}//${location.host}/api/s2s`);
+        s2sSocket.binaryType = "arraybuffer"; // S2S uses binary payload for audio
+
+        s2sSocket.onopen = () => {
+          isS2SActive = true;
+          const btn = $('#btn-mic');
+          btn.classList.add('recording');
+
+          // Visual Confirmation: Listening State
+          const stage = $('#output-stage');
+          stage.classList.add('active');
+          if (!isBotSpeaking) {
+            stage.classList.add('listening-aura');
+            $('#stage-content').innerHTML = `
+              <div style="display:flex; align-items:center; gap:0.5rem; color:var(--gold);">
+                <div style="width:8px; height:8px; background:var(--gold); border-radius:50%; animation:pulse 1s infinite;"></div>
+                Listening...
+              </div>
+            `;
+          }
+
+          console.log('Nova 2 Sonic S2S Connected');
+          // Mock sending audio chunks (simulates native streaming S2S)
+          window._mockAudioFeed = setInterval(() => {
+            if (s2sSocket.readyState === WebSocket.OPEN) {
+              s2sSocket.send(new Uint8Array([0x00]));
+            }
+          }, 500);
+        };
+
+        s2sSocket.onmessage = async (e) => {
+          if (typeof e.data === "string") {
+            const data = JSON.parse(e.data);
+            if (data.type === "act_status" || data.type === "omni_status") {
+              const stage = $('#output-stage');
+              stage.classList.add('active');
+              stage.classList.remove('listening-aura'); // Clear listening aura on update
+
+              if (data.type === "act_status" && data.documents) {
+                // Render documents sliding onto stage
+                $('#stage-content').innerHTML = `
+                  <div style="animation: fadeUp 0.6s ease forwards; width: 100%; max-width: 900px; padding: 1rem;">
+                    <div style="font-size: 1.4rem; font-weight: 300; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 1.5rem; border-bottom: 1px solid rgba(201, 168, 76, 0.3); padding-bottom: 0.5rem; font-family: var(--font-display);">${data.status}</div>
+                    <div style="display:flex; gap: 1.5rem; justify-content:center; flex-wrap:wrap;">
+                      ${data.documents.map(doc => `
+                        <div style="flex: 1; min-width: 280px; background: rgba(10, 15, 25, 0.9); border: 1px solid var(--gold-dim); box-shadow: 0 4px 20px rgba(0,0,0,0.4); padding: 1.5rem; border-radius: 12px; text-align: left;">
+                          <div style="color: var(--gold); font-weight: 600; font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase;">${doc.title}</div>
+                          <div style="color: var(--text); font-size: 0.9rem; line-height: 1.6;">${doc.summary}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+              } else {
+                $('#stage-content').innerHTML = data.status;
+              }
+            } else if (data.type === "chat_response") {
+              appendChat('bot', data.text);
+            }
+          } else {
+            // Binary audio received from Bot natively
+            if (!isS2SActive) return;
+            try {
+              const audioBuffer = await audioContext.decodeAudioData(e.data);
+              const source = audioContext.createBufferSource();
+              source.buffer = audioBuffer;
+              source.connect(audioContext.destination);
+
+              source.onended = () => {
+                isBotSpeaking = false;
+                $('#stage-waveform').classList.remove('speaking');
+              };
+              isBotSpeaking = true;
+              $('#stage-waveform').classList.add('speaking');
+              currentAudioSource = source;
+              source.start(0);
+            } catch (err) {
+              // Expected if echoing empty bytes
+            }
+          }
+        };
+
+        s2sSocket.onclose = () => stopS2S();
+        s2sSocket.onerror = (e) => {
+          console.error('S2S WebSocket Error:', e);
+          stopS2S();
+          showError("S2S Connection Lost (Streaming Stability Handled)");
+        };
+
+      } catch (e) {
+        showError("Microphone access denied or error: " + e.message);
+      }
+    }
+
+    function stopS2S() {
+      isS2SActive = false;
+      if (window._mockAudioFeed) clearInterval(window._mockAudioFeed);
+      if (s2sSocket) s2sSocket.close();
+      if (micStream) micStream.getTracks().forEach(t => t.stop());
+      if (audioContext) audioContext.close();
+      $('#btn-mic').classList.remove('recording');
+      $('#stage-waveform').classList.remove('speaking');
+      $('#output-stage').classList.remove('listening-aura');
+      if ($('#stage-content').innerHTML.includes('Listening...')) {
+        $('#output-stage').classList.remove('active');
+      }
+    }
+
+    function toggleVoice() {
+      if (isS2SActive) {
+        stopS2S();
+      } else {
+        initS2S();
+      }
+    }
+
+    function triggerNovaAct() {
+      const goal = $('#goal').value.trim() || 'Analyze latest formulations.';
+      if (!isS2SActive) toggleVoice();
+      $('#btn-nova-act').classList.add('act-active');
+      setTimeout(() => $('#btn-nova-act').classList.remove('act-active'), 3000);
+
+      setTimeout(() => {
+        if (s2sSocket && s2sSocket.readyState === WebSocket.OPEN) {
+          s2sSocket.send(JSON.stringify({ type: "nova_act", task: goal }));
+        }
+      }, 500);
+    }
+
+    let omniStream = null;
+
+    async function triggerNovaOmni() {
+      // 1. Open User Camera Stream on Stage
+      const stage = $('#output-stage');
+      const videoEl = $('#omni-video');
+      const captureBtn = $('#omni-capture-btn');
+
+      stage.classList.add('active');
+      $('#stage-content').innerHTML = ''; // Clear text
+
+      try {
+        omniStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        videoEl.srcObject = omniStream;
+        videoEl.style.display = 'block';
+        captureBtn.style.display = 'block';
+
+        $('#btn-nova-omni').classList.add('omni-active');
+
+      } catch (err) {
+        showError("Camera access denied or unavailabe for Omni: " + err.message);
+      }
+    }
+
+    function captureOmniImage() {
+      const videoEl = $('#omni-video');
+      const canvas = $('#omni-canvas');
+      const ctx = canvas.getContext('2d');
+      const captureBtn = $('#omni-capture-btn');
+
+      if (!videoEl.videoWidth) return;
+
+      canvas.width = videoEl.videoWidth;
+      canvas.height = videoEl.videoHeight;
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      // Stop Camera
+      if (omniStream) {
+        omniStream.getTracks().forEach(t => t.stop());
+        omniStream = null;
+      }
+      videoEl.style.display = 'none';
+      captureBtn.style.display = 'none';
+      $('#btn-nova-omni').classList.remove('omni-active');
+
+      // Send image data over S2S or Trigger Generation
+      canvas.toBlob((blob) => {
+        // Create a synthetic file object
+        const file = new File([blob], "omni_capture.jpg", { type: "image/jpeg" });
+        // Attach it to the hidden image input so startGeneration can use it
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        $('#image-upload').files = dt.files;
+
+        $('#stage-content').innerHTML = `
+            <div style="color:var(--gold);">Skin Analysis Captured.</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Initiating AI Formulation...</div>
+         `;
+
+        // If Sonic is active, inform backend that visual data is captured
+        if (isS2SActive && s2sSocket && s2sSocket.readyState === WebSocket.OPEN) {
+          s2sSocket.send(JSON.stringify({ type: "omni_image", task: "Analyze captured skin image." }));
+        }
+
+        // Trigger main generation pipeline automatically
+        startGeneration();
+      }, 'image/jpeg');
+    }
+
+    // ── Interactive Chatbot Logic ──
+    function handleChatKey(e) {
+      if (e.key === 'Enter') sendChatMessage();
+    }
+
+    function sendChatMessage() {
+      const input = $('#chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChat('user', text);
+      input.value = '';
+
+      const wantVoice = $('#voice-response-toggle').checked;
+
+      // Ensure socket is open for chat
+      if (!isS2SActive) toggleVoice();
+
+      setTimeout(() => {
+        if (s2sSocket && s2sSocket.readyState === WebSocket.OPEN) {
+          s2sSocket.send(JSON.stringify({
+            type: "chat_message",
+            text: text,
+            voice_response: wantVoice
+          }));
+        }
+      }, 500); // give time for socket to connect if just opened
+    }
+
+    function appendChat(role, text) {
+      const log = $('#chat-log');
+      const msg = document.createElement('div');
+      msg.className = `chat-msg ${role}`;
+      msg.textContent = text;
+      log.appendChild(msg);
+      log.scrollTop = log.scrollHeight;
+
+      // Ensure stage is active so chat is visible
+      $('#output-stage').classList.add('active');
+    }
+
+    // ── Nova Reel Countdown Timer ──────────────────────────
+    let _reelTimerInterval = null;
+    function startReelTimer() {
+      stopReelTimer();
+      const detailEl = $('#detail-novareel');
+      const startTime = Date.now();
+      const estimatedMs = 180000; // ~3 minutes
+      detailEl.innerHTML = `Rendering turntable video... <span class="reel-timer">0:00 / ~3:00</span>
+        <div class="reel-progress-bar"><div class="reel-progress-fill" id="reel-fill"></div></div>`;
+      _reelTimerInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const mins = Math.floor(elapsed / 60000);
+        const secs = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
+        const pct = Math.min(95, (elapsed / estimatedMs) * 100);
+        const timerSpan = detailEl.querySelector('.reel-timer');
+        const fillBar = $('#reel-fill');
+        if (timerSpan) timerSpan.textContent = `${mins}:${secs} / ~3:00`;
+        if (fillBar) fillBar.style.width = pct + '%';
+      }, 1000);
+    }
+    function stopReelTimer() {
+      if (_reelTimerInterval) { clearInterval(_reelTimerInterval); _reelTimerInterval = null; }
+    }
+
+    // ── Formula History (localStorage) ─────────────────────
+    function saveToHistory(data) {
+      try {
+        const history = JSON.parse(localStorage.getItem('ff_history') || '[]');
+        const entry = {
+          id: Date.now(),
+          date: new Date().toLocaleDateString(),
+          name: data.brand_name || data.user_input || 'Formula',
+          goal: data.user_input,
+          score: (data.formula_v2 || data.formula_v1)?.performance_score || 0,
+          cost: (data.formula_v2 || data.formula_v1)?.total_cost || 0,
+          count: Object.values((data.formula_v2 || data.formula_v1)?.ingredients || {}).filter(v => v > 0.001).length,
+        };
+        history.unshift(entry);
+        localStorage.setItem('ff_history', JSON.stringify(history.slice(0, 10)));
+        renderHistory();
+      } catch (e) { }
+    }
+
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem('ff_history') || '[]');
+      const section = $('#history-section');
+      const list = $('#history-list');
+      if (history.length === 0) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      list.innerHTML = '';
+      history.slice(0, 5).forEach(entry => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+          <div class="history-card-title">${entry.name}</div>
+          <div class="history-card-meta">
+            <span>${entry.date}</span>
+            <span>Score: ${entry.score}</span>
+            <span>$${entry.cost}/100g</span>
+            <span>${entry.count} ingredients</span>
+          </div>
+        `;
+        card.onclick = () => {
+          if (entry.goal) $('#goal').value = entry.goal;
+        };
+        list.appendChild(card);
+      });
+    }
+
+    function toggleHistory() {
+      const list = $('#history-list');
+      const arrow = $('#history-arrow');
+      list.classList.toggle('open');
+      arrow.innerHTML = list.classList.contains('open') ? '&#9660;' : '&#9654;';
+    }
+
+    // Load history on page load
+    renderHistory();
+
+    // ── Copy / Download Results ────────────────────────────
+    function buildResultsSummary() {
+      const data = window._lastResultData;
+      if (!data) return '';
+      const formula = data.formula_v2 || data.formula_v1;
+      const name = data.brand_name || data.user_input || 'Formula';
+      let text = `\u2500\u2500\u2500 ${name.toUpperCase()} \u2500\u2500\u2500\n`;
+      text += `Generated by FormulaForge \u00D7 Amazon Nova\n\n`;
+      text += `Goal: ${data.user_input}\n`;
+      text += `Performance Score: ${formula?.performance_score || 'N/A'}\n`;
+      text += `Cost: $${formula?.total_cost || 'N/A'}/100g\n\n`;
+      text += `INGREDIENTS:\n`;
+      if (formula?.ingredients) {
+        Object.entries(formula.ingredients)
+          .filter(([, v]) => v > 0.001)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([name, pct]) => { text += `  ${name}: ${pct.toFixed(2)}%\n`; });
+      }
+      if (data.explanation) {
+        text += `\nSCIENTIFIC ANALYSIS:\n${data.explanation}\n`;
+      }
+      return text;
+    }
+
+    function copyResults() {
+      const text = buildResultsSummary();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = $('#btn-copy');
+        btn.classList.add('copied');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = origHTML;
+        }, 2000);
+      });
+    }
+
+    // ── Color Helper ──────────────────────────────────────────────
+    function _hexToRgb(hex) {
+      hex = (hex || '').replace('#', '');
+      if (hex.length !== 6) return [120, 100, 80];
+      return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+    }
+    function _darken(rgb, amt) { return rgb.map(c => Math.max(0, Math.round(c * (1 - amt)))); }
+    function _lighten(rgb, amt) { return rgb.map(c => Math.min(255, Math.round(c + (255 - c) * amt))); }
+
+    // ── Scientific Report PDF (Clinical / Technical) ─────────────
+    function downloadPDF() {
+      if (!window.jspdf) { alert('PDF library is loading...'); return; }
+      try {
+        const { jsPDF } = window.jspdf;
+        const data = window._lastResultData;
+        if (!data) return;
+        const formula = data.formula_v2 || data.formula_v1;
+        const brandName = (data.brand_name || data.user_input || 'Formula').toUpperCase();
+        const pal = data.brand_palette || {};
+        const primary = _hexToRgb(pal.primary || '1A1A2E');
+        const secondary = _hexToRgb(pal.secondary || '6A5ACD');
+        const gold = _hexToRgb(pal.gold || 'B8942E');
+        const accent = _hexToRgb(pal.accent || 'ECE2D0');
+        const dark = _darken(primary, 0.3);
+        const white = [255, 255, 255];
+        const muted = [120, 115, 110];
+        const doc = new jsPDF('portrait', 'mm', 'a4');
+        const W = 210, H = 297;
+        let y = 0;
+
+        // ── P1: Cover ──
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, W, H, 'F');
+        doc.setFillColor(...gold);
+        doc.rect(0, 0, W, 3, 'F');
+        // Thin vertical accent
+        doc.setFillColor(...secondary);
+        doc.rect(25, 50, 2, 80, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(...gold);
+        doc.text('FORMULATION REPORT', 35, 58);
+        doc.setFontSize(32);
+        doc.setTextColor(...white);
+        const nameLines = doc.splitTextToSize(brandName, 140);
+        doc.text(nameLines, 35, 78);
+
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.4);
+        doc.line(35, 95, 120, 95);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(..._lighten(primary, 0.5));
+        doc.text('Precision Cosmetic Formulation', 35, 105);
+        doc.text(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), 35, 112);
+
+        // Stats row
+        const stats = [
+          { l: 'SCORE', v: String(formula?.performance_score || 0) },
+          { l: 'COST/100g', v: '$' + (formula?.total_cost || 0) },
+          { l: 'INGREDIENTS', v: String(Object.values(formula?.ingredients || {}).filter(v => v > 0.001).length) },
+        ];
+        stats.forEach((s, i) => {
+          const cx = 35 + i * 52;
+          doc.setFillColor(..._darken(primary, 0.15));
+          doc.roundedRect(cx, 125, 44, 30, 2, 2, 'F');
+          doc.setFillColor(...gold);
+          doc.rect(cx, 125, 44, 1.5, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(20);
+          doc.setTextColor(...gold);
+          doc.text(s.v, cx + 22, 142, { align: 'center' });
+          doc.setFontSize(6);
+          doc.setTextColor(..._lighten(primary, 0.4));
+          doc.text(s.l, cx + 22, 150, { align: 'center' });
+        });
+
+        // Footer
+        doc.setFillColor(..._darken(primary, 0.4));
+        doc.rect(0, H - 12, W, 12, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(...gold);
+        doc.text('FORMULAFORGE', 15, H - 5);
+        doc.text('Powered by Amazon Nova', W / 2, H - 5, { align: 'center' });
+        doc.setTextColor(...muted);
+        doc.text('SAMI & VALERIE', W - 15, H - 5, { align: 'right' });
+
+        // ── P2: Ingredients Table ──
+        doc.addPage();
+        doc.setFillColor(...accent);
+        doc.rect(0, 0, W, H, 'F');
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, W, 2, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(...primary);
+        doc.text('INGREDIENT BREAKDOWN', 20, 22);
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.4);
+        doc.line(20, 27, 65, 27);
+
+        y = 38;
+        doc.setFillColor(...primary);
+        doc.rect(20, y - 5, 170, 8, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...white);
+        doc.text('INGREDIENT', 25, y);
+        doc.text('%', 135, y);
+        doc.text('CATEGORY', 155, y);
+        y += 6;
+
+        const sorted = Object.entries(formula?.ingredients || {}).filter(([, v]) => v > 0.001).sort((a, b) => b[1] - a[1]);
+        const parsedIngs = data.parsed_ingredients || [];
+        sorted.forEach(([name, pct], i) => {
+          if (y > H - 25) { doc.addPage(); doc.setFillColor(...accent); doc.rect(0, 0, W, H, 'F'); y = 20; }
+          const bg = i % 2 === 0 ? _lighten(accent, 0.3) : accent;
+          doc.setFillColor(...bg);
+          doc.rect(20, y - 4, 170, 7, 'F');
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(...primary);
+          doc.text(name, 25, y);
+          doc.setTextColor(...gold);
+          doc.text(pct.toFixed(2) + '%', 135, y);
+          const parsed = parsedIngs.find(p => p.name === name);
+          doc.setTextColor(...muted);
+          doc.text((parsed?.category || 'active').toUpperCase(), 155, y);
+          y += 7;
+        });
+
+        // Interactions
+        const interactions = data.interactions || [];
+        if (interactions.length > 0) {
+          y += 8;
+          if (y > H - 40) { doc.addPage(); y = 20; }
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          doc.setTextColor(...primary);
+          doc.text('INTERACTIONS', 20, y);
+          y += 7;
+          interactions.forEach(inter => {
+            if (y > H - 20) { doc.addPage(); y = 20; }
+            const isBad = inter.type === 'conflict';
+            doc.setFillColor(isBad ? 245 : 235, isBad ? 230 : 245, isBad ? 230 : 238);
+            doc.rect(20, y - 3, 170, 8, 'F');
+            doc.setFillColor(...(isBad ? [200, 80, 80] : secondary));
+            doc.rect(20, y - 3, 1.5, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7);
+            doc.setTextColor(...primary);
+            doc.text((isBad ? 'CONFLICT: ' : 'SYNERGY: ') + inter.a + ' + ' + inter.b, 25, y);
+            y += 9;
+          });
+        }
+
+        doc.setFillColor(...primary);
+        doc.rect(0, H - 8, W, 8, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(...gold);
+        doc.text('FORMULAFORGE × AMAZON NOVA', W / 2, H - 3, { align: 'center' });
+
+        // ── P3: Scientific Analysis ──
+        if (data.explanation) {
+          doc.addPage();
+          doc.setFillColor(...accent);
+          doc.rect(0, 0, W, H, 'F');
+          doc.setFillColor(...primary);
+          doc.rect(0, 0, W, 2, 'F');
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(16);
+          doc.setTextColor(...primary);
+          doc.text('SCIENTIFIC ANALYSIS', 20, 22);
+          doc.setDrawColor(...gold);
+          doc.line(20, 27, 60, 27);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(50, 50, 50);
+          let txt = (data.explanation || '').replace(/```[\s\S]*?```/g, '').replace(/^\s*[\[{][\s\S]*?[}\]]/gm, '').trim();
+          if (txt.length > 3500) txt = txt.substring(0, 3500) + '...';
+          doc.text(doc.splitTextToSize(txt, 170), 20, 35);
+
+          doc.setFillColor(...primary);
+          doc.rect(0, H - 8, W, 8, 'F');
+          doc.setFontSize(6);
+          doc.setTextColor(...gold);
+          doc.text('FORMULAFORGE × AMAZON NOVA', W / 2, H - 3, { align: 'center' });
+        }
+
+        doc.save(`FormulaForge_${(data.brand_name || 'formula').replace(/\s+/g, '_')}_Report.pdf`);
+      } catch (err) { console.error(err); alert('PDF error: ' + err.message); }
+    }
+
+    // ── Marketing Brochure PDF (Editorial / YSL-Fair Style) ──────
+    async function downloadMarketingPDF() {
+      if (!window.jspdf) { alert('PDF library loading...'); return; }
+      try {
+        const { jsPDF } = window.jspdf;
+        const data = window._lastResultData;
+        if (!data) return;
+        const formula = data.formula_v2 || data.formula_v1;
+        const brandName = (data.brand_name || data.user_input || 'Formula').toUpperCase();
+        const brandNameTitle = data.brand_name || data.user_input || 'Formula';
+        const vision = data.brand_vision || '';
+        const pal = data.brand_palette || {};
+        const primary = _hexToRgb(pal.primary || '1A1A2E');
+        const secondary = _hexToRgb(pal.secondary || '6A5ACD');
+        const gold = _hexToRgb(pal.gold || 'B8942E');
+        const accent = _hexToRgb(pal.accent || 'ECE2D0');
+        const white = [255, 255, 255];
+        const doc = new jsPDF('portrait', 'mm', 'a4');
+        const W = 210, H = 297;
+
+        // Fetch product image
+        let productImg = null;
+        if (data.canvas_image) {
+          try {
+            const imgResp = await fetch('/images/' + data.canvas_image);
+            const blob = await imgResp.blob();
+            productImg = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) { console.warn('Could not load product image:', e); }
+        }
+
+        // ═══════════════ PAGE 1: FULL-BLEED EDITORIAL COVER ═══════════════
+        // Full primary background with large diagonal accent
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, W, H, 'F');
+        // Diagonal accent stripe
+        doc.setFillColor(..._darken(secondary, 0.1));
+        doc.triangle(0, H * 0.55, W, H * 0.35, W, H * 0.65, 'F');
+        doc.setFillColor(..._darken(primary, 0.1));
+        doc.triangle(0, H * 0.6, W, H * 0.4, 0, H, 'F');
+
+        // Top thin gold line
+        doc.setFillColor(...gold);
+        doc.rect(0, 0, W, 2.5, 'F');
+
+        // Maison name small
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...gold);
+        doc.text('FORMULAFORGE MAISON', W / 2, 20, { align: 'center' });
+
+        // Hero brand name — very large
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(52);
+        doc.setTextColor(...white);
+        const bLines = doc.splitTextToSize(brandName, 170);
+        doc.text(bLines, W / 2, 75, { align: 'center' });
+
+        // Gold separator ornament
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.6);
+        const sepY = 75 + bLines.length * 18;
+        doc.line(W / 2 - 30, sepY, W / 2 - 8, sepY);
+        doc.line(W / 2 + 8, sepY, W / 2 + 30, sepY);
+        // Diamond center
+        doc.setFillColor(...gold);
+        const dy = sepY;
+        doc.triangle(W / 2 - 4, dy, W / 2, dy - 3, W / 2 + 4, dy, 'F');
+        doc.triangle(W / 2 - 4, dy, W / 2, dy + 3, W / 2 + 4, dy, 'F');
+
+        // Vision statement
+        if (vision) {
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(12);
+          doc.setTextColor(..._lighten(primary, 0.6));
+          const vLines = doc.splitTextToSize('"' + vision + '"', 140);
+          doc.text(vLines, W / 2, sepY + 15, { align: 'center' });
+        }
+
+        // Product image on cover
+        if (productImg) {
+          const imgW = 80, imgH = 80;
+          const imgY = vision ? sepY + 35 : sepY + 15;
+          doc.addImage(productImg, 'PNG', (W - imgW) / 2, imgY, imgW, imgH);
+        }
+
+        // Bottom bar with metallic feel
+        doc.setFillColor(...gold);
+        doc.rect(0, H - 25, W, 25, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...primary);
+        doc.text('DISCOVER THE COLLECTION', W / 2, H - 13, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.text('Powered by Amazon Nova AI', W / 2, H - 7, { align: 'center' });
+
+        // ═══════════════ PAGE 2: EDITORIAL SPREAD — "THE RITUAL" ═══════════════
+        doc.addPage();
+        // Split page: left panel colored, right panel white
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, 75, H, 'F');
+        doc.setFillColor(...white);
+        doc.rect(75, 0, 135, H, 'F');
+        // Gold accent line between
+        doc.setFillColor(...gold);
+        doc.rect(73, 30, 2, H - 60, 'F');
+
+        // Left panel text (rotated effect with small text)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...gold);
+        doc.text('THE', 20, 60);
+        doc.setFontSize(28);
+        doc.setTextColor(...white);
+        doc.text('RITUAL', 20, 75);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(..._lighten(primary, 0.5));
+        const score = formula?.performance_score || 0;
+        const ingCount = Object.values(formula?.ingredients || {}).filter(v => v > 0.001).length;
+        const rituText = `A ${ingCount}-ingredient formulation crafted for maximum efficacy. Performance score: ${score}/1000.`;
+        const rLines = doc.splitTextToSize(rituText, 50);
+        doc.text(rLines, 20, 95);
+
+        // Performance circle
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(1.5);
+        doc.circle(37, 155, 18, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.setTextColor(...gold);
+        doc.text(String(score), 37, 158, { align: 'center' });
+        doc.setFontSize(6);
+        doc.setTextColor(..._lighten(primary, 0.4));
+        doc.text('EFFICACY', 37, 167, { align: 'center' });
+
+        // Product image in left panel
+        if (productImg) {
+          doc.addImage(productImg, 'PNG', 8, 185, 58, 58);
+        }
+
+        // Right panel: ingredient cards
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...primary);
+        doc.text('KEY INGREDIENTS', 85, 40);
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.3);
+        doc.line(85, 43, 110, 43);
+
+        let y = 52;
+        const ingDesc = {
+          'water': 'Pure hydration matrix for ingredient delivery',
+          'hyaluronic acid': 'Binds 1000× its weight in moisture',
+          'retinol': 'Accelerates cell renewal & collagen',
+          'vitamin c': 'Brightens & shields from free radicals',
+          'niacinamide': 'Refines pores & strengthens barrier',
+          'glycerin': 'Deep moisture retention technology',
+          'jojoba oil': 'Biomimetic nourishment without residue',
+          'salicylic acid': 'Precision pore-clarifying active',
+          'peptides': 'Collagen-signaling molecules',
+          'ceramides': 'Barrier-rebuilding lipid complex',
+          'phenoxyethanol': 'Ultra-gentle preservation system',
+          'fragrance': 'Bespoke sensorial signature',
+        };
+
+        const topIngs = Object.entries(formula?.ingredients || {})
+          .filter(([, v]) => v > 0.001).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+        topIngs.forEach(([name, pct]) => {
+          if (y > H - 20) return;
+          // Colored dot
+          doc.setFillColor(...secondary);
+          doc.circle(89, y - 1.5, 1.5, 'F');
+          // Name
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...primary);
+          doc.text(name.toUpperCase(), 94, y);
+          // Percentage badge
+          doc.setFillColor(..._lighten(gold, 0.3));
+          doc.roundedRect(175, y - 4, 20, 6, 1, 1, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(6.5);
+          doc.setTextColor(...primary);
+          doc.text(pct.toFixed(1) + '%', 185, y, { align: 'center' });
+          // Description
+          const desc = ingDesc[name.toLowerCase()] || 'Precision-selected for synergy';
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+          doc.setTextColor(120, 120, 120);
+          doc.text(desc, 94, y + 5);
+          y += 14;
+        });
+
+        // Bottom gold bar
+        doc.setFillColor(...gold);
+        doc.rect(75, H - 8, 135, 8, 'F');
+        doc.setFillColor(...primary);
+        doc.rect(0, H - 8, 75, 8, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(...gold);
+        doc.text(brandName, 37, H - 3, { align: 'center' });
+        doc.setTextColor(...primary);
+        doc.text('FORMULAFORGE × AMAZON NOVA', 142, H - 3, { align: 'center' });
+
+        // ═══════════════ PAGE 3: THE PROMISE ═══════════════
+        doc.addPage();
+        doc.setFillColor(...accent);
+        doc.rect(0, 0, W, H, 'F');
+        doc.setFillColor(...primary);
+        doc.rect(0, 0, W, 60, 'F');
+        doc.setFillColor(...gold);
+        doc.rect(0, 58, W, 2, 'F');
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(30);
+        doc.setTextColor(...white);
+        doc.text('THE PROMISE', W / 2, 35, { align: 'center' });
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10);
+        doc.setTextColor(...gold);
+        doc.text('Science that you can see. Luxury that you can feel.', W / 2, 48, { align: 'center' });
+
+        // Promise cards
+        const promises = [
+          { title: 'DERMATOLOGIST PRECISION', desc: `${ingCount} ingredients selected through AI-driven formulation analysis for maximum synergy and safety.` },
+          { title: 'VISIBLE RESULTS', desc: `Performance score of ${score}/1000 — our proprietary efficacy metric powered by Amazon Nova intelligence.` },
+          { title: 'ACCESSIBLE LUXURY', desc: `Premium formulation at $${formula?.total_cost || 0} per 100g — exceptional value without compromising quality.` },
+        ];
+        promises.forEach((p, i) => {
+          const cy = 80 + i * 55;
+          doc.setFillColor(...white);
+          doc.roundedRect(25, cy, 160, 42, 3, 3, 'F');
+          doc.setFillColor(...secondary);
+          doc.rect(25, cy, 3, 42, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(11);
+          doc.setTextColor(...primary);
+          doc.text(p.title, 35, cy + 14);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(80, 80, 80);
+          const pLines = doc.splitTextToSize(p.desc, 140);
+          doc.text(pLines, 35, cy + 24);
+        });
+
+        doc.setFillColor(...primary);
+        doc.rect(0, H - 10, W, 10, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(...gold);
+        doc.text(brandName + '  ·  FORMULAFORGE  ·  AMAZON NOVA', W / 2, H - 4, { align: 'center' });
+
+        doc.save(`${(data.brand_name || 'formula').replace(/\s+/g, '_')}_Marketing_Brochure.pdf`);
+      } catch (err) { console.error(err); alert('Brochure error: ' + err.message); }
+    }
+
+    // ── Theme Toggle ────────────────────────────────────────────
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next === 'dark' ? '' : 'light');
+      if (next === 'dark') html.removeAttribute('data-theme');
+      localStorage.setItem('ff_theme', next);
+      updateThemeIcon(next);
+    }
+
+    function updateThemeIcon(theme) {
+      const moon = $('#theme-icon-moon');
+      const sun = $('#theme-icon-sun');
+      if (theme === 'light') {
+        moon.style.display = 'none';
+        sun.style.display = 'block';
+      } else {
+        moon.style.display = 'block';
+        sun.style.display = 'none';
+      }
+    }
+
+    // Apply saved theme on load
+    (function () {
+      const saved = localStorage.getItem('ff_theme');
+      if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        updateThemeIcon('light');
+      }
+    })();
+
+    // ── Competitor Teardown & Factory Outreach ─────────────────
+    async function runCompetitorTeardown(inputEl) {
+      if (!inputEl.files.length) return;
+      const file = inputEl.files[0];
+      const loadingEl = $('#teardown-loading');
+      loadingEl.style.display = 'block';
+      try {
+        const payload = new FormData();
+        payload.append('image', file);
+        payload.append('formula_json', window._lastResultData ? JSON.stringify(window._lastResultData.formula_v2 || window._lastResultData.formula_v1) : "{}");
+        const res = await fetch('/competitor_teardown', { method: 'POST', body: payload });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        let explanation = $('#explanation-text');
+        explanation.innerHTML = `<strong style="color:var(--gold)">Nova Vision Competitor Analysis:</strong><br><br><span style="color:#fff">${data.report.replace(/\n/g, '<br>')}</span><br><br><hr style="border-color:var(--gold-dim); margin: 2rem 0;"><br>` + explanation.innerHTML;
+
+      } catch (err) {
+        alert('Teardown failed: ' + err.message);
+      } finally {
+        loadingEl.style.display = 'none';
+        inputEl.value = '';
+      }
+    }
+
+    function openOutreachModal() {
+      // Create a native mailto link
+      let factoryEmail = prompt("Enter the factory's email address:", "contact@lab.com");
+      if (!factoryEmail) return;
+
+      let factoryName = prompt("Enter the factory's name:", "Leading Cosmetics Lab");
+      if (!factoryName) return;
+
+      const data = window._lastResultData;
+      if (!data) {
+        alert("No formula generated yet. Please generate a formula first.");
+        return;
+      }
+
+      const formulaData = data.formula_v2 || data.formula_v1 || {};
+      let ingredientText = "";
+      if (formulaData.ingredients) {
+        for (const [ing, pct] of Object.entries(formulaData.ingredients)) {
+          if (pct > 0.001) ingredientText += `- ${ing}: ${pct.toFixed(2)}%\n`;
+        }
+      } else {
+        ingredientText = JSON.stringify(formulaData, null, 2);
+      }
+
+      const brandName = data.brand_name || 'Our Brand';
+
+      const subject = `Request for Quote: Pilot Production of ${brandName}`;
+      const body = `Dear ${factoryName} Team,\n\nI hope this email finds you well. My name is [My Name], and I represent a burgeoning skincare brand dedicated to delivering unparalleled efficacy and luxury to our clientele. We are currently in the process of launching our flagship product, ${brandName}, and are seeking a reputable manufacturer to produce a 10,000-unit pilot run of this meticulously formulated cream.\n\nBelow, you will find the detailed formula for your review. We have ensured that the ingredients are of the highest quality and are compliant with all relevant cosmetic regulations. Please note the specific interactions and warnings associated with the formula to maintain product integrity and efficacy.\n\n**Formula:**\n${ingredientText}\n\nCould you please provide us with a detailed quote, including:\n1. Production cost per unit\n2. Estimated timeline for production and delivery\n3. Any additional services your lab offers\n4. Your lab's certifications and compliance\n\nWe are keen to commence this pilot run as soon as possible and are looking for a partner who can deliver excellence and reliability.\n\nThank you for your attention to this request. We look forward to your prompt response.\n\nBest regards,\n\n[My Name]\n[Your Position]\n[Your Company Name]`;
+
+      const mailtoLink = `mailto:${encodeURIComponent(factoryEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailtoLink;
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ── SKIN ANALYSIS (Camera + Nova Vision) ──────────────
+    // ══════════════════════════════════════════════════════
+    let _skinStream = null;
+
+    function openSkinPanel() {
+      document.getElementById('panel-backdrop').classList.add('active');
+      document.getElementById('skin-panel').classList.add('active');
+      document.getElementById('skin-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function closeSkinPanel() {
+      stopSkinCamera();
+      document.getElementById('skin-panel').classList.remove('active');
+      document.getElementById('panel-backdrop').classList.remove('active');
+    }
+    function startSkinCamera() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } } })
+        .then(stream => {
+          _skinStream = stream;
+          const vid = document.getElementById('skin-video');
+          vid.srcObject = stream;
+          vid.style.display = 'block';
+          document.getElementById('skin-placeholder').style.display = 'none';
+          document.getElementById('btn-skin-capture').style.display = 'inline-flex';
+          document.getElementById('btn-skin-camera').textContent = 'Switch Camera';
+        })
+        .catch(err => showError('Camera access denied: ' + err.message));
+    }
+    function stopSkinCamera() {
+      if (_skinStream) { _skinStream.getTracks().forEach(t => t.stop()); _skinStream = null; }
+      document.getElementById('skin-video').style.display = 'none';
+      document.getElementById('btn-skin-capture').style.display = 'none';
+      document.getElementById('skin-placeholder').style.display = '';
+    }
+    function captureSkinPhoto() {
+      const vid = document.getElementById('skin-video');
+      const canvas = document.getElementById('skin-canvas');
+      canvas.width = vid.videoWidth;
+      canvas.height = vid.videoHeight;
+      canvas.getContext('2d').drawImage(vid, 0, 0);
+      stopSkinCamera();
+      // Show captured image
+      canvas.style.display = 'block';
+      canvas.toBlob(blob => analyzeSkin(blob), 'image/jpeg', 0.9);
+    }
+    function handleSkinUpload(input) {
+      if (!input.files.length) return;
+      const file = input.files[0];
+      // Show preview
+      const canvas = document.getElementById('skin-canvas');
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        canvas.style.display = 'block';
+        document.getElementById('skin-placeholder').style.display = 'none';
+      };
+      img.src = URL.createObjectURL(file);
+      analyzeSkin(file);
+      input.value = '';
+    }
+    async function analyzeSkin(blob) {
+      const resultsEl = document.getElementById('skin-results');
+      const loadingEl = document.getElementById('skin-loading');
+      const reportEl = document.getElementById('skin-report');
+      resultsEl.classList.add('active');
+      loadingEl.style.display = 'block';
+      reportEl.innerHTML = '';
+      try {
+        const fd = new FormData();
+        fd.append('image', blob, 'skin.jpg');
+        const resp = await fetch('/skin_analysis', { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error('Analysis failed: ' + resp.status);
+        const data = await resp.json();
+        renderSkinReport(data);
+      } catch (err) {
+        reportEl.innerHTML = '<div style="color:var(--red);padding:1rem;">Analysis failed: ' + err.message + '</div>';
+      } finally {
+        loadingEl.style.display = 'none';
+      }
+    }
+    function renderSkinReport(data) {
+      const reportEl = document.getElementById('skin-report');
+      let html = '';
+
+      // Warning banner
+      if (data.warning && data.warning !== 'null' && data.warning !== null) {
+        html += '<div style="background:rgba(196,91,91,0.15);border:1px solid rgba(196,91,91,0.4);padding:0.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:0.8rem;color:#f88;"><strong>⚠️ Important:</strong> ' + data.warning + '</div>';
+      }
+
+      // Header badges
+      html += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">';
+      if (data.skin_type) html += '<span style="background:rgba(201,168,76,0.15);color:var(--gold);padding:4px 10px;border-radius:20px;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;">' + data.skin_type + '</span>';
+      if (data.skin_tone) html += '<span style="background:rgba(201,168,76,0.08);color:var(--text-muted);padding:4px 10px;border-radius:20px;font-size:0.7rem;">' + data.skin_tone + ' tone</span>';
+      if (data.severity) html += '<span style="background:' + (data.severity === 'severe' ? 'rgba(196,91,91,0.15);color:#f88' : data.severity === 'moderate' ? 'rgba(255,183,77,0.15);color:#ffb74d' : 'rgba(129,199,132,0.15);color:#81c784') + ';padding:4px 10px;border-radius:20px;font-size:0.7rem;">' + data.severity + '</span>';
+      html += '</div>';
+
+      // Diagnosis
+      html += '<div class="skin-diagnosis"><h4 style="color:var(--gold);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.5rem;">Clinical Diagnosis</h4>';
+      html += '<p style="font-size:0.85rem;line-height:1.7;color:var(--text);">' + (data.diagnosis || 'No diagnosis available') + '</p></div>';
+
+      // Concerns tags
+      if (data.concerns && data.concerns.length) {
+        html += '<div class="skin-concerns" style="margin-top:0.8rem;">';
+        data.concerns.forEach(c => { html += '<span class="skin-concern-tag">' + c + '</span>'; });
+        html += '</div>';
+      }
+
+      // Affected Areas with severity bars
+      if (data.affected_areas && data.affected_areas.length) {
+        html += '<div style="margin-top:1.2rem;"><div style="font-size:0.75rem;color:var(--gold);margin-bottom:0.6rem;letter-spacing:0.15em;text-transform:uppercase;">Affected Areas</div>';
+        data.affected_areas.forEach(area => {
+          const sev = parseInt(area.severity) || 5;
+          const barColor = sev >= 7 ? '#f88' : sev >= 4 ? '#ffb74d' : '#81c784';
+          html += '<div style="margin-bottom:0.5rem;"><div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:2px;"><span style="color:var(--text);text-transform:capitalize;">' + area.zone + '</span><span style="color:var(--text-muted);font-size:0.7rem;">' + area.issue + '</span></div>';
+          html += '<div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + (sev * 10) + '%;background:' + barColor + ';border-radius:2px;transition:width 1s ease;"></div></div></div>';
+        });
+        html += '</div>';
+      }
+
+      // Root Causes
+      if (data.root_causes && data.root_causes.length) {
+        html += '<div style="margin-top:1.2rem;padding:0.8rem;background:rgba(201,168,76,0.04);border-radius:8px;border-left:3px solid var(--gold);"><div style="font-size:0.7rem;color:var(--gold);margin-bottom:0.4rem;letter-spacing:0.15em;text-transform:uppercase;">Root Causes</div>';
+        html += '<ul style="margin:0;padding-left:1rem;">';
+        data.root_causes.forEach(c => { html += '<li style="font-size:0.78rem;color:var(--text);margin-bottom:0.2rem;">' + c + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      // Treatment Plan
+      if (data.treatment_plan && data.treatment_plan.length) {
+        html += '<div style="margin-top:1.2rem;"><div style="font-size:0.75rem;color:var(--gold);margin-bottom:0.6rem;letter-spacing:0.15em;text-transform:uppercase;">Treatment Plan</div>';
+        data.treatment_plan.forEach(step => {
+          const priorityColor = step.priority === 'high' ? '#f88' : step.priority === 'medium' ? '#ffb74d' : '#81c784';
+          html += '<div style="display:flex;gap:0.6rem;align-items:flex-start;margin-bottom:0.6rem;padding:0.6rem;background:rgba(255,255,255,0.02);border-radius:8px;">';
+          html += '<div style="min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.1);border-radius:50%;font-size:0.7rem;color:var(--gold);font-weight:bold;">' + step.step + '</div>';
+          html += '<div style="flex:1;"><div style="font-size:0.8rem;color:var(--text);">' + step.action + '</div>';
+          html += '<div style="display:flex;gap:0.5rem;margin-top:0.3rem;"><span style="font-size:0.65rem;color:var(--text-muted);">⏱ ' + step.timeframe + '</span><span style="font-size:0.6rem;padding:1px 6px;border-radius:3px;background:' + priorityColor + '22;color:' + priorityColor + ';">' + step.priority + '</span></div>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // Recommended Ingredients
+      if (data.recommended_ingredients && data.recommended_ingredients.length) {
+        html += '<div style="margin-top:1.2rem;"><div style="font-size:0.75rem;color:var(--gold);margin-bottom:0.6rem;letter-spacing:0.15em;text-transform:uppercase;">Recommended Ingredients</div>';
+        data.recommended_ingredients.forEach(ing => {
+          html += '<div class="skin-ingredient-card"><div class="ing-name">' + ing.name;
+          if (ing.concentration) html += ' <span style="color:var(--gold);font-size:0.65rem;">(' + ing.concentration + ')</span>';
+          if (ing.when_to_use) html += ' <span style="font-size:0.6rem;padding:1px 5px;border-radius:3px;background:rgba(79,195,247,0.1);color:#4fc3f7;margin-left:4px;">' + ing.when_to_use + '</span>';
+          html += '</div><div class="ing-benefit">' + (ing.benefit || '') + '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // Market Products
+      if (data.market_products && data.market_products.length) {
+        html += '<div id="skin-market-products" style="margin-top:1.2rem;"><div style="font-size:0.75rem;color:var(--gold);margin-bottom:0.6rem;letter-spacing:0.15em;text-transform:uppercase;">Best Products For You</div>';
+        data.market_products.forEach(p => {
+          html += '<div style="padding:0.8rem;background:rgba(255,255,255,0.02);border:1px solid rgba(201,168,76,0.1);border-radius:10px;margin-bottom:0.5rem;">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;"><span style="font-size:0.85rem;color:var(--text);font-weight:500;">' + p.product + '</span><span style="font-size:0.7rem;color:var(--gold);">' + (p.price_range || '') + '</span></div>';
+          html += '<div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.3rem;">by <strong>' + p.brand + '</strong> · ' + (p.key_ingredients || '') + '</div>';
+          html += '<div style="font-size:0.75rem;color:var(--text);line-height:1.5;">' + (p.why || '') + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Lifestyle Tips
+      if (data.lifestyle_tips && data.lifestyle_tips.length) {
+        html += '<ul class="skin-tips" style="margin-top:1rem;">';
+        data.lifestyle_tips.forEach(t => { html += '<li>' + t + '</li>'; });
+        html += '</ul>';
+      }
+
+      // Action buttons
+      html += '<div style="display:flex;gap:0.5rem;margin-top:1.2rem;flex-wrap:wrap;">';
+      if (data.formula_goal) {
+        html += '<button class="btn-action" style="flex:1;justify-content:center;background:var(--gold);color:#0a0a0a;border-color:transparent;font-weight:600;" onclick="useSkinGoal(this)" data-goal="' + data.formula_goal.replace(/"/g, '&quot;') + '">🧪 Generate Custom Formula</button>';
+      }
+      if (data.market_products && data.market_products.length) {
+        html += '<button class="btn-action" style="flex:1;justify-content:center;border-color:var(--gold);color:var(--gold);" onclick="document.getElementById(\'skin-market-products\').scrollIntoView({behavior:\'smooth\',block:\'center\'})">🛒 View Best Products</button>';
+      }
+      html += '</div>';
+
+      reportEl.innerHTML = html;
+    }
+    function useSkinGoal(btn) {
+      const goal = btn.getAttribute('data-goal');
+      document.getElementById('goal').value = goal;
+      document.getElementById('goal').classList.add('flash-highlight');
+      setTimeout(() => document.getElementById('goal').classList.remove('flash-highlight'), 1000);
+      closeSkinPanel();
+      document.getElementById('goal').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ── STANDALONE CHATBOT (REST + Voice) ─────────────────
+    // ══════════════════════════════════════════════════════
+    let _chatHistory = [];
+    let _chatMicRecognition = null;
+    let _isChatMicActive = false;
+
+    function openChatPanel() {
+      document.getElementById('panel-backdrop').classList.add('active');
+      document.getElementById('chatbot-panel').classList.add('active');
+      document.getElementById('chatbot-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => document.getElementById('chatbot-input').focus(), 300);
+    }
+    function closeChatPanel() {
+      document.getElementById('chatbot-panel').classList.remove('active');
+      document.getElementById('panel-backdrop').classList.remove('active');
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      stopChatMic();
+    }
+    function closeAllPanels() {
+      closeSkinPanel();
+      closeChatPanel();
+    }
+
+    function addChatMsg(role, text) {
+      const container = document.getElementById('chatbot-messages');
+      const msg = document.createElement('div');
+      msg.className = 'chatbot-msg ' + role;
+      msg.textContent = text;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendChatbotMessage() {
+      const input = document.getElementById('chatbot-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      addChatMsg('user', text);
+      _chatHistory.push({ role: 'user', content: text });
+
+      // Show typing indicator
+      const typingMsg = document.createElement('div');
+      typingMsg.className = 'chatbot-msg bot';
+      typingMsg.id = 'chat-typing';
+      typingMsg.innerHTML = 'Thinking<span class="speaking-indicator">...</span>';
+      document.getElementById('chatbot-messages').appendChild(typingMsg);
+      document.getElementById('chatbot-messages').scrollTop = document.getElementById('chatbot-messages').scrollHeight;
+
+      try {
+        const formulaData = window._lastResultData;
+        const formulaJson = formulaData ? JSON.stringify(formulaData.formula_v2 || formulaData.formula_v1 || {}) : '{}';
+        const resp = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: text, formula_json: formulaJson, history: _chatHistory.slice(-6) })
+        });
+        if (!resp.ok) throw new Error('Chat failed');
+        const data = await resp.json();
+        const reply = data.answer || data.response || data.text || 'No response';
+
+        // Remove typing indicator
+        const typing = document.getElementById('chat-typing');
+        if (typing) typing.remove();
+
+        addChatMsg('bot', reply);
+        _chatHistory.push({ role: 'assistant', content: reply });
+
+        // Voice response if toggled on
+        if (document.getElementById('chat-voice-toggle').checked) {
+          speakText(reply);
+        }
+      } catch (err) {
+        const typing = document.getElementById('chat-typing');
+        if (typing) typing.remove();
+        addChatMsg('bot', 'Error: ' + err.message + '. Make sure the server is running.');
+      }
+    }
+
+    // ── Web Speech API: Text-to-Speech ────────────────
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.95;
+      utter.pitch = 1.0;
+      // Try to find a good voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) || voices.find(v => v.lang.startsWith('en'));
+      if (preferred) utter.voice = preferred;
+      const micBtn = document.getElementById('chatbot-mic-btn');
+      utter.onstart = () => micBtn.classList.add('speaking');
+      utter.onend = () => micBtn.classList.remove('speaking');
+      window.speechSynthesis.speak(utter);
+    }
+
+    // ── Web Speech API: Speech-to-Text (Mic) ──────────
+    function toggleChatMic() {
+      if (_isChatMicActive) {
+        stopChatMic();
+        return;
+      }
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showError('Speech recognition is not supported in this browser. Try Chrome.');
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      _chatMicRecognition = new SpeechRecognition();
+      _chatMicRecognition.lang = 'en-US';
+      _chatMicRecognition.interimResults = true;
+      _chatMicRecognition.continuous = false;
+
+      const input = document.getElementById('chatbot-input');
+      const micBtn = document.getElementById('chatbot-mic-btn');
+      _isChatMicActive = true;
+      micBtn.classList.add('recording');
+
+      _chatMicRecognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        input.value = transcript;
+        if (event.results[0].isFinal) {
+          stopChatMic();
+          sendChatbotMessage();
+        }
+      };
+      _chatMicRecognition.onerror = (e) => {
+        console.error('Speech recognition error:', e.error);
+        stopChatMic();
+        if (e.error !== 'no-speech') showError('Mic error: ' + e.error);
+      };
+      _chatMicRecognition.onend = () => stopChatMic();
+      _chatMicRecognition.start();
+    }
+
+    function stopChatMic() {
+      _isChatMicActive = false;
+      if (_chatMicRecognition) { try { _chatMicRecognition.stop(); } catch (e) { } }
+      document.getElementById('chatbot-mic-btn').classList.remove('recording');
+    }
+
+    // Load voices (needed for some browsers)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // ── Wire up floating action bar buttons ───────────
+    (function () {
+      // Override the Nova Omni button to open our skin panel
+      const omniBtn = document.getElementById('btn-nova-omni');
+      if (omniBtn) {
+        omniBtn.onclick = function (e) { e.preventDefault(); openSkinPanel(); };
+      }
+      // Override the mic button to open chatbot
+      const micBtn = document.getElementById('btn-mic');
+      if (micBtn) {
+        micBtn.onclick = function (e) { e.preventDefault(); openChatPanel(); };
+      }
+    })();
+
+    // ══════════════════════════════════════════════════════
+    // ── FORMULA GENOME RADAR CHART ────────────────────────
+    // ══════════════════════════════════════════════════════
+    const GENOME_AXES = [
+      { key: 'hydration', label: 'Hydration', color: '#4FC3F7', keywords: ['hyaluronic', 'glycerin', 'squalane', 'ceramide', 'panthenol', 'urea', 'aloe', 'shea', 'jojoba', 'water', 'aqua', 'sorbitol', 'betaine'] },
+      { key: 'antiaging', label: 'Anti-Aging', color: '#CE93D8', keywords: ['retinol', 'retinal', 'peptide', 'collagen', 'vitamin c', 'ascorbic', 'niacinamide', 'resveratrol', 'coq10', 'bakuchiol', 'adenosine'] },
+      { key: 'protection', label: 'Protection', color: '#FFD54F', keywords: ['spf', 'titanium', 'zinc oxide', 'avobenzone', 'octinoxate', 'antioxidant', 'vitamin e', 'tocopherol', 'ferulic', 'green tea'] },
+      { key: 'gentleness', label: 'Gentleness', color: '#81C784', keywords: ['aloe', 'chamomile', 'centella', 'bisabolol', 'allantoin', 'oat', 'calendula', 'panthenol', 'madecassoside'] },
+      { key: 'efficacy', label: 'Efficacy', color: '#FF8A65', keywords: ['salicylic', 'glycolic', 'lactic', 'aha', 'bha', 'azelaic', 'benzoyl', 'adapalene', 'tretinoin', 'kojic', 'arbutin', 'tranexamic'] },
+      { key: 'value', label: 'Value', color: '#90CAF9', keywords: [] }
+    ];
+
+    function renderGenomeChart(data) {
+      const formula = data.formula_v2 || data.formula_v1;
+      if (!formula || !formula.ingredients) return;
+
+      const ingredients = Object.entries(formula.ingredients).filter(([, v]) => v > 0.001);
+      const ingNames = ingredients.map(([n]) => n.toLowerCase());
+      const totalCost = parseFloat(formula.total_cost) || 10;
+      const score = parseFloat(formula.performance_score) || 50;
+
+      // Compute scores for each axis
+      const scores = GENOME_AXES.map(axis => {
+        if (axis.key === 'value') {
+          // Value = inverse of cost relative to score
+          return Math.min(100, Math.max(20, (score / totalCost) * 8));
+        }
+        let hits = 0;
+        axis.keywords.forEach(kw => {
+          ingNames.forEach(ing => { if (ing.includes(kw)) hits++; });
+        });
+        return Math.min(100, Math.max(15, hits * 28 + 15 + Math.random() * 10));
+      });
+
+      // Build SVG
+      const cx = 150, cy = 150, r = 110;
+      const n = GENOME_AXES.length;
+      const getPoint = (i, val) => {
+        const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+        const dist = (val / 100) * r;
+        return [cx + dist * Math.cos(angle), cy + dist * Math.sin(angle)];
+      };
+
+      let svg = `<svg width="320" height="320" viewBox="0 0 300 300">`;
+      // Grid rings
+      [20, 40, 60, 80, 100].forEach(level => {
+        const pts = Array.from({ length: n }, (_, i) => getPoint(i, level).join(',')).join(' ');
+        svg += `<polygon points="${pts}" class="grid-line"/>`;
+      });
+      // Axis lines + labels
+      GENOME_AXES.forEach((axis, i) => {
+        const [ex, ey] = getPoint(i, 100);
+        svg += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" class="axis-line"/>`;
+        const [lx, ly] = getPoint(i, 120);
+        const anchor = lx < cx - 10 ? 'end' : lx > cx + 10 ? 'start' : 'middle';
+        svg += `<text x="${lx}" y="${ly + 4}" class="axis-label" text-anchor="${anchor}">${axis.label}</text>`;
+      });
+      // Data polygon (starts at center, animates out)
+      const dataPoints = scores.map((s, i) => getPoint(i, s).join(',')).join(' ');
+      const zeroPoints = scores.map((_, i) => getPoint(i, 0).join(',')).join(' ');
+      svg += `<polygon class="radar-area" points="${zeroPoints}" fill="rgba(201,168,76,0.12)" stroke="var(--gold)" stroke-width="1.5">`;
+      svg += `<animate attributeName="points" from="${zeroPoints}" to="${dataPoints}" dur="1.2s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>`;
+      svg += `</polygon>`;
+      // Dots
+      scores.forEach((s, i) => {
+        const [dx, dy] = getPoint(i, s);
+        const [zx, zy] = getPoint(i, 0);
+        svg += `<circle class="radar-dot" cx="${zx}" cy="${zy}" r="4" fill="${GENOME_AXES[i].color}" stroke="#0a0a0a" stroke-width="1.5">`;
+        svg += `<animate attributeName="cx" from="${zx}" to="${dx}" dur="1.2s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>`;
+        svg += `<animate attributeName="cy" from="${zy}" to="${dy}" dur="1.2s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>`;
+        svg += `<title>${GENOME_AXES[i].label}: ${Math.round(s)}%</title></circle>`;
+      });
+      svg += `</svg>`;
+
+      document.getElementById('genome-chart').innerHTML = svg;
+      document.getElementById('genome-section').classList.add('active');
+
+      // Legend
+      let legendHtml = '';
+      GENOME_AXES.forEach((axis, i) => {
+        legendHtml += `<div class="genome-legend-item"><div class="genome-legend-dot" style="background:${axis.color}"></div>${axis.label}: <strong>${Math.round(scores[i])}%</strong></div>`;
+      });
+      document.getElementById('genome-legend').innerHTML = legendHtml;
+
+      // Get Nova AI insight
+      fetchGenomeInsight(formula, scores);
+    }
+
+    async function fetchGenomeInsight(formula, scores) {
+      try {
+        const q = `Analyze this formula genome profile. Scores: Hydration ${Math.round(scores[0])}%, Anti-Aging ${Math.round(scores[1])}%, Protection ${Math.round(scores[2])}%, Gentleness ${Math.round(scores[3])}%, Efficacy ${Math.round(scores[4])}%, Value ${Math.round(scores[5])}%. Give a 2-sentence expert insight about the formula's strengths and one suggestion for improvement. Be concise and specific.`;
+        const resp = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q, formula_json: JSON.stringify(formula), history: [] })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const insight = data.answer || data.response || '';
+        if (insight) {
+          document.getElementById('genome-insight-text').textContent = insight;
+          document.getElementById('genome-insight').style.display = 'block';
+        }
+      } catch (e) { /* silent fail for insight */ }
+    }
+
+    // Auto-hide the onboarding tooltip
+    setTimeout(() => {
+      const tt = document.getElementById('fab-tooltip');
+      if (tt) {
+        tt.style.opacity = '0';
+        setTimeout(() => tt.remove(), 1000);
+      }
+    }, 6000);
+  </script>
+</body>
+
+</html>
