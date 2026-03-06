@@ -4917,6 +4917,11 @@
       container.scrollTop = container.scrollHeight;
     }
 
+    let silenceTimer = null;
+    let voiceAnalyser = null;
+    let dataArray = null;
+    let rafId = null;
+
     async function toggleRecording() {
       if (isRecording) {
         stopRecording();
@@ -4931,6 +4936,14 @@
         audioChunks = [];
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
 
+        // Set up Audio Context for Silence Detection (VAD)
+        voiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = voiceAudioContext.createMediaStreamSource(stream);
+        voiceAnalyser = voiceAudioContext.createAnalyser();
+        voiceAnalyser.fftSize = 256;
+        source.connect(voiceAnalyser);
+        dataArray = new Uint8Array(voiceAnalyser.frequencyBinCount);
+
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) audioChunks.push(e.data);
         };
@@ -4938,6 +4951,12 @@
         mediaRecorder.onstop = () => {
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
           stream.getTracks().forEach(t => t.stop());
+          if (voiceAudioContext) {
+            voiceAudioContext.close();
+            voiceAudioContext = null;
+          }
+          if (rafId) cancelAnimationFrame(rafId);
+          clearTimeout(silenceTimer);
 
           // Send audio to WebSocket
           if (voiceWs && voiceWs.readyState === WebSocket.OPEN && blob.size > 100) {
@@ -4953,10 +4972,48 @@
         document.getElementById('voiceMicBtn').classList.add('recording');
         setVoiceStatus('listening');
 
+        // Start checking for silence
+        checkAudioLevel();
+
       } catch (err) {
         console.error('Microphone error:', err);
         alert('Please allow microphone access to use voice chat.');
       }
+    }
+
+    function checkAudioLevel() {
+      if (!isRecording || !voiceAnalyser) return;
+
+      voiceAnalyser.getByteFrequencyData(dataArray);
+
+      // Calculate average volume level
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / dataArray.length;
+
+      // Silence threshold (adjust if needed, usually background noise is < 10)
+      const silenceThreshold = 10;
+      const silenceDuration = 2000; // 2 seconds of silence stops recording
+
+      if (average > silenceThreshold) {
+        // User is speaking, reset timer
+        if (silenceTimer) {
+          clearTimeout(silenceTimer);
+          silenceTimer = null;
+        }
+      } else {
+        // User is quiet, start timer if not already started
+        if (!silenceTimer) {
+          silenceTimer = setTimeout(() => {
+            console.log('Silence detected, auto-stopping recording');
+            stopRecording();
+          }, silenceDuration);
+        }
+      }
+
+      rafId = requestAnimationFrame(checkAudioLevel);
     }
 
     function stopRecording() {
@@ -4965,6 +5022,8 @@
       }
       isRecording = false;
       document.getElementById('voiceMicBtn').classList.remove('recording');
+      if (silenceTimer) clearTimeout(silenceTimer);
+      if (rafId) cancelAnimationFrame(rafId);
     }
 
     function playAudioBlob(blob) {
