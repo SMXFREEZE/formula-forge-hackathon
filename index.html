@@ -881,104 +881,6 @@
         font-size: 1.8rem;
       }
 
-      /* Mobile Draggable Action Bar */
-      .nova-actions {
-        right: 1rem;
-        bottom: 6rem;
-        top: auto;
-        left: auto;
-        transform: scale(var(--fab-scale, 1));
-        transform-origin: center right;
-        flex-direction: column;
-        border-radius: 20px;
-        padding: 0.4rem;
-        transition: opacity 0.3s ease;
-        z-index: 1000;
-        align-items: center;
-        position: fixed;
-        touch-action: none;
-        background: rgba(17, 17, 17, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(201, 168, 76, 0.3);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      }
-
-      .nova-actions.dragging {
-        opacity: 0.8;
-      }
-
-      .btn-nova {
-        width: 48px;
-        min-height: 48px;
-        margin-bottom: 0.4rem;
-      }
-
-      .btn-nova:last-child {
-        margin-bottom: 0;
-      }
-
-      .drag-handle {
-        width: 100%;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: grab;
-        color: var(--text-muted);
-        margin-bottom: 0.2rem;
-      }
-
-      .drag-handle:active {
-        cursor: grabbing;
-      }
-
-      .hide-tools-btn {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: rgba(196, 91, 91, 0.2);
-        color: var(--red);
-        border: 1px solid rgba(196, 91, 91, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.6rem;
-        cursor: pointer;
-        margin-top: 0.4rem;
-      }
-
-      .show-tools-float {
-        position: fixed;
-        bottom: 1rem;
-        left: 1rem;
-        background: var(--surface);
-        border: 1px solid var(--gold);
-        color: var(--gold);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        z-index: 999;
-        display: none;
-        align-items: center;
-        gap: 0.4rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        cursor: pointer;
-      }
-
-      .show-tools-float.active {
-        display: flex;
-        animation: fadeUp 0.3s ease forwards;
-      }
-
-      .voice-fab {
-        left: 1rem;
-        bottom: 6rem;
-        width: 50px;
-        height: 50px;
-      }
-
       /* Mobile Modals (Full Screen) */
       .chatbot-panel.active,
       .skin-panel.active {
@@ -1206,15 +1108,103 @@
       }
     }
 
-    /* ── Nova Action Buttons ──────────────────────────────── */
+    /* ── Nova Action Buttons (Draggable) ──────────────────── */
     .textarea-wrapper {
       position: relative;
     }
 
     .nova-actions {
+      position: fixed;
+      right: 2rem;
+      top: 50%;
+      left: auto;
+      bottom: auto;
+      transform: translateY(-50%) scale(var(--fab-scale, 1));
+      transform-origin: center right;
       display: flex;
-      gap: 1rem;
-      z-index: 100;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 1000;
+      background: rgba(17, 17, 17, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 0.5rem;
+      border-radius: 40px;
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      touch-action: none;
+      align-items: center;
+      transition: opacity 0.3s ease;
+    }
+
+    .nova-actions.dragging {
+      opacity: 0.8;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .drag-handle {
+      width: 100%;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .hide-tools-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(196, 91, 91, 0.2);
+      color: var(--red);
+      border: 1px solid rgba(196, 91, 91, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      cursor: pointer;
+      margin-top: 0.4rem;
+      transition: background 0.2s;
+    }
+
+    .hide-tools-btn:hover {
+      background: rgba(196, 91, 91, 0.4);
+    }
+
+    .show-tools-float {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 0.8rem 1.5rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .show-tools-float:hover {
+      background: var(--gold);
+      color: #0A0A0A;
+    }
+
+    .show-tools-float.active {
+      display: flex;
+      animation: fadeUp 0.3s ease forwards;
     }
 
     .btn-nova {
@@ -1707,6 +1697,8 @@
       color: var(--gold-dim);
       margin-bottom: 0.5rem;
     }
+
+
 
     .skin-actions {
       display: flex;
