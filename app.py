@@ -1187,6 +1187,182 @@ async def suggest_alternatives(req: SubstitutionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── Stability & Shelf-Life Predictor ─────────────────────────────────
+
+class StabilityRequest(BaseModel):
+    formula_json: str = "{}"
+    product_type: str = "leave-on serum"
+
+@app.post("/stability_analysis")
+async def stability_analysis(req: StabilityRequest):
+    """Nova Pro analyzes formula for stability risks and estimates shelf life."""
+    try:
+        formula = json.loads(req.formula_json or "{}")
+        ings = formula.get("ingredients", {})
+        ing_list = [f"{k} ({v:.2f}%)" for k, v in sorted(ings.items(), key=lambda x: -x[1]) if v > 0.01]
+        ing_str = ", ".join(ing_list[:20]) or "unknown ingredients"  # type: ignore[index]
+
+        prompt = (
+            f"You are a senior cosmetic chemist specializing in formulation stability.\n"
+            f"Product type: {req.product_type}\n"
+            f"Ingredients: {ing_str}\n\n"
+            "Analyze this formula for stability. Provide:\n"
+            "1. Estimated shelf life range (unopened, properly stored)\n"
+            "2. Up to 4 stability risks (ingredient incompatibilities, pH sensitivity, oxidation risks)\n"
+            "3. Recommended preservatives or antioxidants if needed\n"
+            "4. Optimal storage conditions\n"
+            "5. Overall stability score 0-100\n\n"
+            "Respond ONLY with valid JSON:\n"
+            '{"shelf_life": "18-24 months", "stability_score": 78, '
+            '"risks": [{"ingredient": "...", "risk": "...", "severity": "low|medium|high"}], '
+            '"recommended_preservatives": ["...", "..."], '
+            '"storage_conditions": "...", "overall_assessment": "..."}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(  # type: ignore[arg-type]
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a cosmetic stability chemist.", max_tokens=700, temperature=0.3),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"shelf_life": "12-18 months", "stability_score": 70, "risks": [],
+                "recommended_preservatives": [], "storage_conditions": "Cool, dry place",
+                "overall_assessment": "Analysis unavailable"}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── INCI Name Converter ───────────────────────────────────────────────
+
+class INCIRequest(BaseModel):
+    ingredients: List[str] = []
+
+@app.post("/inci_convert")
+async def inci_convert(req: INCIRequest):
+    """Nova Pro converts common ingredient names to official INCI nomenclature."""
+    try:
+        if not req.ingredients:
+            return {"inci": {}}
+        ing_list = req.ingredients[:30]  # type: ignore[index]
+        ing_str = "\n".join(f"- {i}" for i in ing_list)
+
+        prompt = (
+            "You are a cosmetic regulatory expert specializing in INCI nomenclature.\n"
+            "Convert each of the following cosmetic ingredient common names to their official "
+            "INCI (International Nomenclature Cosmetic Ingredient) name.\n\n"
+            f"Ingredients:\n{ing_str}\n\n"
+            "Rules:\n"
+            "- Use the exact official INCI name (Title Case)\n"
+            "- If already in INCI format, return as-is\n"
+            "- If uncertain, provide the most likely INCI name\n\n"
+            "Respond ONLY with valid JSON mapping common name to INCI name:\n"
+            '{"inci": {"common name 1": "INCI Name 1", "common name 2": "INCI Name 2"}}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(  # type: ignore[arg-type]
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a cosmetic regulatory and INCI nomenclature expert.", max_tokens=800, temperature=0.1),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"inci": {}}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Multi-Market Regulatory Report ───────────────────────────────────
+
+class RegulatoryRequest(BaseModel):
+    formula_json: str = "{}"
+    product_type: str = "leave-on skincare"
+
+@app.post("/regulatory_report")
+async def regulatory_report(req: RegulatoryRequest):
+    """Nova Pro checks formula against EU, FDA, Health Canada, and ASEAN regulations."""
+    try:
+        formula = json.loads(req.formula_json or "{}")
+        ings = formula.get("ingredients", {})
+        ing_list = [f"{k} ({v:.2f}%)" for k, v in sorted(ings.items(), key=lambda x: -x[1]) if v > 0.01]
+        ing_str = ", ".join(ing_list[:20]) or "unknown ingredients"  # type: ignore[index]
+
+        prompt = (
+            "You are a global cosmetics regulatory compliance expert.\n"
+            f"Product type: {req.product_type}\n"
+            f"Formula ingredients: {ing_str}\n\n"
+            "Analyze this formula's compliance against these four frameworks:\n"
+            "1. EU Cosmetics Regulation (EC) No 1223/2009\n"
+            "2. US FDA Cosmetics/OTC guidelines\n"
+            "3. Health Canada Cosmetics regulations\n"
+            "4. ASEAN Cosmetic Directive (ACD)\n\n"
+            "For each market provide:\n"
+            "- status: 'compliant', 'caution', or 'non-compliant'\n"
+            "- flags: list of flagged ingredients with the specific restriction\n"
+            "- notes: key requirements or summary\n\n"
+            "Respond ONLY with valid JSON:\n"
+            '{"markets": ['
+            '{"region": "EU", "status": "compliant", "flags": [{"ingredient": "...", "issue": "..."}], "notes": "..."},'
+            '{"region": "FDA", "status": "caution", "flags": [], "notes": "..."},'
+            '{"region": "Health Canada", "status": "compliant", "flags": [], "notes": "..."},'
+            '{"region": "ASEAN", "status": "compliant", "flags": [], "notes": "..."}'
+            ']}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(  # type: ignore[arg-type]
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a global cosmetics regulatory compliance expert.", max_tokens=900, temperature=0.2),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"markets": []}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Ingredient Deep Dive ──────────────────────────────────────────────
+
+class DeepDiveRequest(BaseModel):
+    ingredient: str
+    percentage: float = 0.0
+
+@app.post("/ingredient_deepdive")
+async def ingredient_deepdive(req: DeepDiveRequest):
+    """Nova Lite generates a detailed ingredient profile card."""
+    try:
+        pct_str = f" (used at {req.percentage:.2f}%)" if req.percentage > 0 else ""
+        prompt = (
+            f"You are a cosmetic chemist and ingredient expert.\n"
+            f"Provide a detailed profile for: {req.ingredient}{pct_str}\n\n"
+            "Include:\n"
+            "1. Official INCI name\n"
+            "2. Mechanism of action (how it works on skin, 1-2 sentences)\n"
+            "3. Typical use range (% min-max in cosmetics)\n"
+            "4. Best suited skin types (list)\n"
+            "5. Key benefits (exactly 3 short bullet points)\n"
+            "6. Formulation tips (1-2 sentences)\n"
+            "7. Known interactions or cautions (1 sentence, or 'None known')\n\n"
+            "Respond ONLY with valid JSON:\n"
+            '{"inci_name": "...", "mechanism": "...", "use_range": "0.5-2%", '
+            '"skin_types": ["oily", "dry"], "benefits": ["...", "...", "..."], '
+            '"formulation_tips": "...", "cautions": "..."}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(  # type: ignore[arg-type]
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a cosmetic ingredient science expert.", max_tokens=600, temperature=0.3),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"inci_name": req.ingredient, "mechanism": "No data available",
+                "use_range": "N/A", "skin_types": [], "benefits": [],
+                "formulation_tips": "", "cautions": ""}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── Health check ──────────────────────────────────────────────────────
 
 @app.get("/health")

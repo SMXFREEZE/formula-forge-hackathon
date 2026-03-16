@@ -8,14 +8,12 @@ services:
     envVars:
       - key: PORT
         value: 8000
-      - key: OPENAI_API_KEY
-        sync: false  # Set in Render dashboard
-      # AWS credentials for Nova Reel video generation
+      # AWS credentials for Bedrock (Nova), Polly, and S3
       - key: AWS_ACCESS_KEY_ID
-        sync: false
+        sync: false  # Set in Render dashboard
       - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_DEFAULT_REGION
-        value: us-east-2
+        sync: false  # Set in Render dashboard
+      - key: AWS_REGION
+        value: us-east-1
       - key: FORGE_S3_BUCKET
         value: formulaforge-reel-outputs

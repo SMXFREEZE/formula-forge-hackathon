@@ -801,6 +801,289 @@
       cursor: pointer; font-size: 1rem;
     }
 
+    /* ── Stability Analysis ────────────────────────────── */
+    #stabilitySection {
+      margin: 2rem 0;
+    }
+    .stability-score-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.4rem 0 1.2rem;
+    }
+    .stability-score-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--red), #ffb74d, var(--green));
+      transition: width 1s ease;
+    }
+    .stability-shelf-badge {
+      display: inline-block;
+      background: rgba(107,158,107,0.15);
+      border: 1px solid rgba(107,158,107,0.4);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+    .stability-risk-card {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      margin-bottom: 0.4rem;
+      background: rgba(255,255,255,0.02);
+      border-left: 3px solid var(--gold-dim);
+    }
+    .stability-risk-card.high { border-left-color: var(--red); }
+    .stability-risk-card.medium { border-left-color: #ffb74d; }
+    .stability-risk-card.low { border-left-color: var(--green); }
+    .stability-risk-ing { font-size: 0.82rem; color: var(--text); font-weight: 500; }
+    .stability-risk-desc { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .stability-preservative-list {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 1rem;
+    }
+    .stability-preservative-tag {
+      background: rgba(201,168,76,0.1);
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+    }
+    .stability-sub-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    /* ── INCI Modal ─────────────────────────────────────── */
+    #inciModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #inciModal.active { display: flex; }
+    .inci-panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 10px;
+      padding: 1.8rem 2rem;
+      width: min(560px, 94vw);
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .inci-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+    }
+    .inci-table th {
+      text-align: left;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--gold-dim);
+    }
+    .inci-table td {
+      padding: 0.45rem 0.5rem;
+      color: var(--text);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+    }
+    .inci-table td:last-child { color: var(--text-muted); font-style: italic; }
+    .inci-copy-btn {
+      margin-top: 1rem;
+      background: none;
+      border: 1px solid var(--gold-dim);
+      color: var(--gold);
+      border-radius: 4px;
+      padding: 5px 14px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      letter-spacing: 0.06em;
+      transition: all 0.2s;
+    }
+    .inci-copy-btn:hover { background: rgba(201,168,76,0.1); }
+
+    /* ── Regulatory Report Modal ─────────────────────────── */
+    #regModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #regModal.active { display: flex; }
+    .reg-panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 10px;
+      padding: 1.8rem 2rem;
+      width: min(640px, 94vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .reg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+    }
+    @media(max-width:520px){ .reg-grid { grid-template-columns: 1fr; } }
+    .reg-card {
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+    }
+    .reg-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+    .reg-region {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+    .reg-status-badge {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .reg-status-badge.compliant {
+      background: rgba(107,158,107,0.15);
+      color: var(--green);
+      border: 1px solid rgba(107,158,107,0.4);
+    }
+    .reg-status-badge.caution {
+      background: rgba(255,183,77,0.15);
+      color: #ffb74d;
+      border: 1px solid rgba(255,183,77,0.4);
+    }
+    .reg-status-badge.non-compliant {
+      background: rgba(196,91,91,0.15);
+      color: var(--red);
+      border: 1px solid rgba(196,91,91,0.4);
+    }
+    .reg-flag {
+      font-size: 0.72rem;
+      color: var(--red);
+      padding: 2px 0;
+      display: flex;
+      gap: 0.3rem;
+      align-items: flex-start;
+    }
+    .reg-notes {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-top: 0.4rem;
+    }
+
+    /* ── Ingredient Deep Dive Popover ───────────────────── */
+    #deepDivePopover {
+      display: none;
+      position: fixed;
+      z-index: 3000;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      width: min(340px, 92vw);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+    #deepDivePopover.active { display: block; }
+    .deepdive-ing-name {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--gold);
+      margin-bottom: 0.1rem;
+    }
+    .deepdive-inci {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 0.9rem;
+      letter-spacing: 0.03em;
+    }
+    .deepdive-section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0.7rem 0 0.2rem;
+    }
+    .deepdive-text {
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .deepdive-pill-row {
+      display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.3rem 0;
+    }
+    .deepdive-pill {
+      background: rgba(201,168,76,0.08);
+      border: 1px solid var(--gold-dim);
+      color: var(--text-muted);
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.65rem;
+    }
+    .deepdive-benefit {
+      font-size: 0.75rem;
+      color: var(--text);
+      padding: 2px 0;
+      display: flex; gap: 0.4rem; align-items: flex-start;
+    }
+    .deepdive-benefit::before { content: "·"; color: var(--gold); flex-shrink: 0; }
+    .deepdive-caution {
+      font-size: 0.72rem;
+      color: #ffb74d;
+      background: rgba(255,183,77,0.06);
+      border-left: 2px solid #ffb74d;
+      padding: 0.4rem 0.6rem;
+      border-radius: 0 4px 4px 0;
+      margin-top: 0.4rem;
+    }
+    .deepdive-close {
+      position: absolute; top: 0.6rem; right: 0.8rem;
+      background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem;
+    }
+    .ing-name-btn {
+      background: none; border: none; color: var(--text);
+      cursor: pointer; font-family: inherit; font-size: inherit;
+      padding: 0; text-align: left;
+      text-decoration: underline dotted rgba(201,168,76,0.4);
+      transition: color 0.2s;
+    }
+    .ing-name-btn:hover { color: var(--gold); }
+
     /* Interactions */
     .interactions {
       display: flex;
@@ -2654,6 +2937,12 @@
         <div class="warning-cards" id="interactions-list"></div>
       </div>
 
+      <!-- Stability Analysis (shown after user clicks button) -->
+      <div id="stabilitySection" style="display:none;">
+        <h3 class="section-title">Stability &amp; Shelf-Life Analysis</h3>
+        <div id="stabilityContent"></div>
+      </div>
+
       <!-- Explanation -->
       <h3 class="section-title">Scientific Analysis</h3>
       <div class="explanation" id="explanation-text"></div>
@@ -2718,6 +3007,30 @@
           </svg>
           Generate Names
         </button>
+        <button class="btn-action" id="btn-stability" onclick="runStabilityAnalysis()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2v-4M9 21H5a2 2 0 01-2-2v-4m0 0h18"/>
+          </svg>
+          Stability Report
+        </button>
+        <button class="btn-action" id="btn-inci" onclick="openInciModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          INCI Names
+        </button>
+        <button class="btn-action" id="btn-regulatory" onclick="openRegModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+          </svg>
+          Regulatory Report
+        </button>
       </div>
 
       <input type="file" id="teardown-hidden-input" accept="image/*" style="display:none;"
@@ -2766,6 +3079,47 @@
       <div class="namegen-spinner" style="padding:1rem 0;">
         <div class="spinner" style="margin:0 auto 0.5rem;width:20px;height:20px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
         Fetching alternatives…
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INCI Name Sheet Modal ────────────────────────── -->
+  <div id="inciModal" role="dialog" aria-modal="true" aria-label="INCI Name Converter">
+    <div class="inci-panel">
+      <button onclick="closeInciModal()" style="position:absolute;top:1rem;right:1.2rem;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;">✕</button>
+      <div style="font-family:var(--font-display);font-size:1.5rem;color:var(--gold);">INCI Name Sheet</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);letter-spacing:0.08em;margin-top:0.2rem;">Nova Pro — Official INCI Nomenclature</div>
+      <div id="inciContent">
+        <div style="text-align:center;padding:2rem 0;">
+          <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+          <div style="font-size:0.78rem;color:var(--gold);">Converting ingredient names…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Regulatory Report Modal ───────────────────────── -->
+  <div id="regModal" role="dialog" aria-modal="true" aria-label="Regulatory Compliance Report">
+    <div class="reg-panel">
+      <button onclick="closeRegModal()" style="position:absolute;top:1rem;right:1.2rem;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;">✕</button>
+      <div style="font-family:var(--font-display);font-size:1.5rem;color:var(--gold);">Regulatory Report</div>
+      <div style="font-size:0.72rem;color:var(--text-muted);letter-spacing:0.08em;margin-top:0.2rem;">Nova Pro — EU · FDA · Health Canada · ASEAN</div>
+      <div id="regContent">
+        <div style="text-align:center;padding:2.5rem 0;">
+          <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+          <div style="font-size:0.78rem;color:var(--gold);">Checking global regulations…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Ingredient Deep Dive Popover ─────────────────── -->
+  <div id="deepDivePopover" role="dialog" aria-label="Ingredient Deep Dive">
+    <button class="deepdive-close" onclick="closeDeepDive()">✕</button>
+    <div id="deepDiveContent">
+      <div style="text-align:center;padding:1.5rem 0;">
+        <div class="spinner" style="margin:0 auto 0.6rem;width:20px;height:20px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="font-size:0.75rem;color:var(--gold);">Loading profile…</div>
       </div>
     </div>
   </div>
@@ -2848,6 +3202,13 @@
       // Reset share buttons
       $('#results-actions').style.display = 'none';
       window._lastResultData = null;
+
+      // Reset new feature sections
+      $('#stabilitySection').style.display = 'none';
+      document.getElementById('stabilityContent').innerHTML = '';
+      const stabilityBtn = document.getElementById('btn-stability');
+      if (stabilityBtn) { stabilityBtn.disabled = false; stabilityBtn.textContent = 'Stability Report'; }
+      _deepDiveCache = {};
     }
 
     function updateStep(name, status, detail) {
@@ -2880,8 +3241,9 @@
       const tbody = $('#ing-tbody');
       sorted.forEach(([name, pct]) => {
         const tr = document.createElement('tr');
+        const safeName = name.replace(/'/g, "\\'");
         tr.innerHTML = `
-          <td>${name}<button class="alt-btn" onclick="openSubst(event,'${name.replace(/'/g,"\\'")}',${pct.toFixed(4)})">≈ Alt</button></td>
+          <td><button class="ing-name-btn" onclick="openDeepDive(event,'${safeName}',${pct.toFixed(4)})">${name}</button><button class="alt-btn" onclick="openSubst(event,'${safeName}',${pct.toFixed(4)})">≈ Alt</button></td>
           <td style="text-align:center;"></td>
           <td>${pct.toFixed(2)}%</td>`;
         tbody.appendChild(tr);
@@ -5002,6 +5364,302 @@
         setTimeout(() => tt.remove(), 1000);
       }
     }, 6000);
+
+    // ══════════════════════════════════════════════════════
+    // ── STABILITY & SHELF-LIFE PREDICTOR ──────────────────
+    // ══════════════════════════════════════════════════════
+    async function runStabilityAnalysis() {
+      const btn = document.getElementById('btn-stability');
+      const section = document.getElementById('stabilitySection');
+      const content = document.getElementById('stabilityContent');
+      if (!window._lastResultData) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Analyzing…';
+      section.style.display = 'block';
+      content.innerHTML = `<div style="text-align:center;padding:1.5rem 0;">
+        <div class="spinner" style="margin:0 auto 0.6rem;width:22px;height:22px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="font-size:0.78rem;color:var(--gold);">Nova Pro is analyzing stability…</div>
+      </div>`;
+      section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      try {
+        const formula = window._lastResultData.formula_v2 || window._lastResultData.formula_v1 || {};
+        const resp = await fetch('/stability_analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ formula_json: JSON.stringify(formula), product_type: 'leave-on serum' })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const d = await resp.json();
+        renderStabilityReport(d);
+        btn.textContent = '✓ Stability Report';
+      } catch (err) {
+        content.innerHTML = `<div style="color:var(--red);font-size:0.8rem;">Analysis failed: ${err.message}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Stability Report';
+      }
+    }
+
+    function renderStabilityReport(d) {
+      const score = d.stability_score || 0;
+      const scoreColor = score >= 70 ? 'var(--green)' : score >= 45 ? '#ffb74d' : 'var(--red)';
+      let html = `
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.4rem;">
+          <span class="stability-shelf-badge">Shelf Life: ${d.shelf_life || 'N/A'}</span>
+          <span style="font-size:0.78rem;color:${scoreColor};">Stability Score: <strong>${score}/100</strong></span>
+        </div>
+        <div class="stability-score-bar">
+          <div class="stability-score-fill" style="width:${score}%"></div>
+        </div>`;
+
+      if (d.risks && d.risks.length) {
+        html += `<div class="stability-sub-label">Stability Risks</div>`;
+        d.risks.forEach(r => {
+          html += `<div class="stability-risk-card ${r.severity || 'low'}">
+            <div style="flex:1;">
+              <div class="stability-risk-ing">${r.ingredient || ''}</div>
+              <div class="stability-risk-desc">${r.risk || ''}</div>
+            </div>
+            <span style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:${r.severity==='high'?'var(--red)':r.severity==='medium'?'#ffb74d':'var(--green)'};">${r.severity||'low'}</span>
+          </div>`;
+        });
+      }
+
+      if (d.recommended_preservatives && d.recommended_preservatives.length) {
+        html += `<div class="stability-sub-label" style="margin-top:0.8rem;">Recommended Preservatives / Antioxidants</div>
+          <div class="stability-preservative-list">`;
+        d.recommended_preservatives.forEach(p => {
+          html += `<span class="stability-preservative-tag">${p}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      if (d.storage_conditions) {
+        html += `<div class="stability-sub-label">Storage</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">${d.storage_conditions}</div>`;
+      }
+
+      if (d.overall_assessment) {
+        html += `<div style="margin-top:0.9rem;padding:0.7rem 0.9rem;background:rgba(201,168,76,0.05);border-radius:6px;border-left:3px solid var(--gold);font-size:0.78rem;color:var(--text);line-height:1.6;">${d.overall_assessment}</div>`;
+      }
+
+      document.getElementById('stabilityContent').innerHTML = html;
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ── INCI NAME CONVERTER ───────────────────────────────
+    // ══════════════════════════════════════════════════════
+    async function openInciModal() {
+      if (!window._lastResultData) return;
+      const modal = document.getElementById('inciModal');
+      const content = document.getElementById('inciContent');
+      modal.classList.add('active');
+
+      const formula = window._lastResultData.formula_v2 || window._lastResultData.formula_v1 || {};
+      const ingredients = Object.keys(formula.ingredients || {}).filter(k => (formula.ingredients[k] || 0) > 0.001);
+      if (!ingredients.length) {
+        content.innerHTML = '<div style="color:var(--text-muted);padding:1rem 0;font-size:0.8rem;">No ingredients found.</div>';
+        return;
+      }
+
+      content.innerHTML = `<div style="text-align:center;padding:2rem 0;">
+        <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="font-size:0.78rem;color:var(--gold);">Converting ingredient names…</div>
+      </div>`;
+
+      try {
+        const resp = await fetch('/inci_convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ingredients })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        renderInciSheet(ingredients, data.inci || {}, formula.ingredients || {});
+      } catch (err) {
+        content.innerHTML = `<div style="color:var(--red);font-size:0.8rem;">Conversion failed: ${err.message}</div>`;
+      }
+    }
+
+    function renderInciSheet(ingredients, inciMap, formulaIngs) {
+      const sorted = [...ingredients].sort((a, b) => (formulaIngs[b] || 0) - (formulaIngs[a] || 0));
+      let rows = sorted.map(name => {
+        const inci = inciMap[name] || name;
+        const pct = (formulaIngs[name] || 0).toFixed(2);
+        return `<tr><td>${name}</td><td>${pct}%</td><td>${inci}</td></tr>`;
+      }).join('');
+
+      const copyText = sorted.map(n => `${inciMap[n] || n} ${(formulaIngs[n]||0).toFixed(2)}%`).join('\n');
+
+      document.getElementById('inciContent').innerHTML = `
+        <table class="inci-table">
+          <thead><tr><th>Common Name</th><th>%</th><th>INCI Name</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <button class="inci-copy-btn" onclick="navigator.clipboard.writeText(${JSON.stringify(copyText)}).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy INCI List',1500)})">Copy INCI List</button>`;
+    }
+
+    function closeInciModal() {
+      document.getElementById('inciModal').classList.remove('active');
+    }
+    document.getElementById('inciModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('inciModal')) closeInciModal();
+    });
+
+    // ══════════════════════════════════════════════════════
+    // ── MULTI-MARKET REGULATORY REPORT ────────────────────
+    // ══════════════════════════════════════════════════════
+    async function openRegModal() {
+      if (!window._lastResultData) return;
+      const modal = document.getElementById('regModal');
+      const content = document.getElementById('regContent');
+      modal.classList.add('active');
+
+      const formula = window._lastResultData.formula_v2 || window._lastResultData.formula_v1 || {};
+      content.innerHTML = `<div style="text-align:center;padding:2.5rem 0;">
+        <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="font-size:0.78rem;color:var(--gold);">Checking global regulations…</div>
+      </div>`;
+
+      try {
+        const resp = await fetch('/regulatory_report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ formula_json: JSON.stringify(formula), product_type: 'leave-on skincare' })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        renderRegReport(data.markets || []);
+      } catch (err) {
+        content.innerHTML = `<div style="color:var(--red);font-size:0.8rem;">Report failed: ${err.message}</div>`;
+      }
+    }
+
+    function renderRegReport(markets) {
+      if (!markets.length) {
+        document.getElementById('regContent').innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;padding:1rem 0;">No data returned.</div>';
+        return;
+      }
+      let cards = markets.map(m => {
+        const statusClass = (m.status || 'caution').toLowerCase().replace(/[^a-z-]/g, '');
+        const statusLabel = (m.status || 'caution').toUpperCase();
+        let flagsHtml = '';
+        if (m.flags && m.flags.length) {
+          flagsHtml = m.flags.map(f => `<div class="reg-flag">⚑ <span><strong>${f.ingredient}</strong>: ${f.issue}</span></div>`).join('');
+        }
+        return `<div class="reg-card">
+          <div class="reg-card-header">
+            <div class="reg-region">${m.region}</div>
+            <span class="reg-status-badge ${statusClass}">${statusLabel}</span>
+          </div>
+          ${flagsHtml}
+          <div class="reg-notes">${m.notes || ''}</div>
+        </div>`;
+      }).join('');
+      document.getElementById('regContent').innerHTML = `<div class="reg-grid">${cards}</div>`;
+    }
+
+    function closeRegModal() {
+      document.getElementById('regModal').classList.remove('active');
+    }
+    document.getElementById('regModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('regModal')) closeRegModal();
+    });
+
+    // ══════════════════════════════════════════════════════
+    // ── INGREDIENT DEEP DIVE CARD ─────────────────────────
+    // ══════════════════════════════════════════════════════
+    let _deepDiveCache = {};
+
+    async function openDeepDive(event, ingName, pct) {
+      event.stopPropagation();
+      const popover = document.getElementById('deepDivePopover');
+      const content = document.getElementById('deepDiveContent');
+
+      // Position near the click (fixed positioning = viewport coords)
+      const rect = event.target.getBoundingClientRect();
+      const popH = 380;
+      const top = rect.bottom + 8 + popH > window.innerHeight ? Math.max(8, rect.top - popH - 8) : rect.bottom + 8;
+      const left = Math.min(rect.left, window.innerWidth - 356);
+      popover.style.top = Math.max(8, top) + 'px';
+      popover.style.left = Math.max(8, left) + 'px';
+      popover.classList.add('active');
+
+      if (_deepDiveCache[ingName]) {
+        renderDeepDiveCard(_deepDiveCache[ingName], ingName, pct);
+        return;
+      }
+
+      content.innerHTML = `<div style="text-align:center;padding:1.5rem 0;">
+        <div class="spinner" style="margin:0 auto 0.6rem;width:20px;height:20px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <div style="font-size:0.75rem;color:var(--gold);">Loading profile…</div>
+      </div>`;
+
+      try {
+        const resp = await fetch('/ingredient_deepdive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ingredient: ingName, percentage: pct })
+        });
+        if (!resp.ok) throw new Error(await resp.text());
+        const data = await resp.json();
+        _deepDiveCache[ingName] = data;
+        renderDeepDiveCard(data, ingName, pct);
+      } catch (err) {
+        content.innerHTML = `<div style="color:var(--red);font-size:0.75rem;">Failed: ${err.message}</div>`;
+      }
+    }
+
+    function renderDeepDiveCard(d, ingName, pct) {
+      const pctStr = pct > 0 ? ` · ${parseFloat(pct).toFixed(2)}% in formula` : '';
+      let html = `
+        <div class="deepdive-ing-name">${ingName}</div>
+        <div class="deepdive-inci">${d.inci_name || ingName}${pctStr}</div>`;
+
+      if (d.mechanism) {
+        html += `<div class="deepdive-section-label">Mechanism</div>
+          <div class="deepdive-text">${d.mechanism}</div>`;
+      }
+
+      if (d.use_range) {
+        html += `<div class="deepdive-section-label">Typical Use Range</div>
+          <div class="deepdive-text" style="color:var(--gold);">${d.use_range}</div>`;
+      }
+
+      if (d.skin_types && d.skin_types.length) {
+        html += `<div class="deepdive-section-label">Skin Types</div>
+          <div class="deepdive-pill-row">`;
+        d.skin_types.forEach(s => { html += `<span class="deepdive-pill">${s}</span>`; });
+        html += `</div>`;
+      }
+
+      if (d.benefits && d.benefits.length) {
+        html += `<div class="deepdive-section-label">Benefits</div>`;
+        d.benefits.forEach(b => { html += `<div class="deepdive-benefit">${b}</div>`; });
+      }
+
+      if (d.formulation_tips) {
+        html += `<div class="deepdive-section-label">Formulation Tips</div>
+          <div class="deepdive-text">${d.formulation_tips}</div>`;
+      }
+
+      if (d.cautions && d.cautions.toLowerCase() !== 'none known') {
+        html += `<div class="deepdive-caution">⚠ ${d.cautions}</div>`;
+      }
+
+      document.getElementById('deepDiveContent').innerHTML = html;
+    }
+
+    function closeDeepDive() {
+      document.getElementById('deepDivePopover').classList.remove('active');
+    }
+    document.addEventListener('click', e => {
+      const pop = document.getElementById('deepDivePopover');
+      if (pop.classList.contains('active') && !pop.contains(e.target)) {
+        closeDeepDive();
+      }
+    });
   </script>
 
   <!-- ═══════════════════════════════════════════════════════════════════
