@@ -10,7 +10,7 @@ services:
         value: 8000
       - key: OPENAI_API_KEY
         sync: false  # Set in Render dashboard
-      # AWS credentials for Nova Reel video generation (optional - falls back to DALL-E 3)
+      # AWS credentials for Nova Reel video generation
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY

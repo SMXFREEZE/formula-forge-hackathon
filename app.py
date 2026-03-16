@@ -15,10 +15,12 @@ Requires:
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import os
 import re
 import shutil
+import struct
 import tempfile
 import traceback
 import uuid
@@ -127,6 +129,21 @@ async def start_generation(
     image: Optional[UploadFile] = File(None),
 ):
     """Start the pipeline and return a job_id for SSE streaming."""
+    if not user_input or not user_input.strip():
+        raise HTTPException(400, "Formula goal cannot be empty.")
+    if budget <= 0:
+        raise HTTPException(400, "Budget must be greater than 0.")
+    if budget > 10000:
+        raise HTTPException(400, "Budget must be $10,000 or less.")
+
+    import time as _time
+
+    # Purge completed jobs older than 2 hours to prevent memory leaks
+    _now = _time.time()
+    stale = [jid for jid, j in list(jobs.items()) if j.get("status") in ("complete", "failed") and _now - j.get("created_at", _now) > 7200]
+    for jid in stale:
+        jobs.pop(jid, None)
+
     job_id = str(uuid.uuid4())[:8]
 
     # Save uploaded image if provided
@@ -147,10 +164,11 @@ async def start_generation(
         "image_path": image_path,
         "events": [],
         "result": None,
+        "created_at": _time.time(),
     }
 
     # Run pipeline in background
-    asyncio.get_event_loop().run_in_executor(
+    asyncio.get_running_loop().run_in_executor(
         None, _run_pipeline, job_id
     )
 
@@ -162,7 +180,7 @@ def _run_pipeline(job_id: str):
     job = jobs[job_id]
     job["status"] = "running"
 
-    def emit(step: str, status: str, data: dict = None):
+    def emit(step: str, status: str, data: Optional[dict] = None):
         event = {"step": step, "status": status, "data": data or {}}
         job["events"].append(event)
 
@@ -489,17 +507,16 @@ async def skin_analysis(
             "Output ONLY the JSON, no markdown fences."
         )
 
-        raw = forge.openai_client.invoke(
+        raw = _nova_invoke_vc(
             analysis_prompt,
             system="You are a world-class dermatologist AI. Provide comprehensive, evidence-based skin analysis.",
             image_bytes=content,
             image_media_type=media_type,
-            max_tokens=3000,
-            json_mode=True,
+            max_tokens=4096,
+            temperature=0.3,
         )
 
-        import re as _re
-        match = _re.search(r'\{[\s\S]*\}', raw)
+        match = re.search(r'\{[\s\S]*\}', raw)
         if match:
             analysis = json.loads(match.group())
         else:
@@ -611,132 +628,349 @@ async def competitor_teardown_endpoint(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── Amazon Nova / Polly helpers for Video Call ───────────────────────
+
+_VC_NOVA_MODEL = "amazon.nova-lite-v1:0"
+_VC_AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+
+
+def _vc_nova_client():
+    """Return a lazily created Bedrock Runtime client for the video call."""
+    import boto3
+    from botocore.config import Config as _BotoConfig
+    return boto3.client(
+        "bedrock-runtime",
+        region_name=_VC_AWS_REGION,
+        config=_BotoConfig(
+            retries={"max_attempts": 2, "mode": "adaptive"},
+            read_timeout=90,
+        ),
+    )
+
+
+def _nova_invoke_vc(prompt: str, system: str,
+                    image_bytes: Optional[bytes] = None,
+                    image_media_type: str = "image/jpeg",
+                    max_tokens: int = 600,
+                    temperature: float = 0.7,
+                    history: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Invoke Amazon Bedrock Nova for a video call turn (blocking, run in executor).
+
+    history: list of {"role": "user"|"assistant", "content": str} dicts for multi-turn context.
+    The current user prompt (with optional image) is appended as the final user turn.
+    """
+    # Build Nova messages array from conversation history
+    nova_messages: list = []
+
+    # Add prior turns (text-only — images are only on the latest turn)
+    if history:
+        for turn in history:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                nova_messages.append({"role": role, "content": [{"text": content}]})
+
+    # Build the current user turn (image + text)
+    current_content: list = []
+    if image_bytes is not None:
+        current_content.append({
+            "image": {
+                "format": image_media_type.split("/")[-1],
+                "source": {"bytes": base64.b64encode(image_bytes).decode("utf-8")},
+            }
+        })
+    current_content.append({"text": prompt})
+    nova_messages.append({"role": "user", "content": current_content})
+
+    body: dict = {
+        "messages": nova_messages,
+        "inferenceConfig": {
+            "maxTokens": max_tokens,
+            "temperature": temperature,
+            "topP": 0.9,
+        },
+    }
+    if system:
+        body["system"] = [{"text": system}]
+
+    client = _vc_nova_client()
+    resp = client.invoke_model(
+        modelId=_VC_NOVA_MODEL,
+        contentType="application/json",
+        accept="application/json",
+        body=json.dumps(body),
+    )
+    result = json.loads(resp["body"].read())
+    return result["output"]["message"]["content"][0]["text"]
+
+
+def _pcm_to_wav_vc(pcm_data: bytes, sample_rate: int = 16000,
+                   channels: int = 1, bit_depth: int = 16) -> bytes:
+    """Wrap raw Polly PCM bytes in a WAV container."""
+    data_size = len(pcm_data)
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF", 36 + data_size, b"WAVE",
+        b"fmt ", 16, 1, channels, sample_rate,
+        sample_rate * channels * bit_depth // 8,
+        channels * bit_depth // 8, bit_depth,
+        b"data", data_size,
+    )
+    return header + pcm_data
+
+
+def _polly_speak(text: str) -> Optional[bytes]:
+    """Convert text to WAV via Amazon Polly neural voice.
+    Returns None if Polly is unavailable so the frontend can use Web Speech API.
+    """
+    import boto3
+    from botocore.exceptions import ClientError as _BotoClientError
+    try:
+        polly = boto3.client("polly", region_name=_VC_AWS_REGION)
+        resp = polly.synthesize_speech(
+            Text=text,
+            OutputFormat="pcm",
+            VoiceId="Joanna",
+            Engine="neural",
+            SampleRate="16000",
+        )
+        return _pcm_to_wav_vc(resp["AudioStream"].read(), sample_rate=16000)
+    except _BotoClientError as exc:
+        print(f"[Polly] {exc.response['Error']['Code']} — frontend will use Web Speech API.")
+        return None
+    except Exception as exc:
+        print(f"[Polly] Error: {exc}")
+        return None
+
+
 # ── Real-Time Voice Chat & Vision ─────────────────────────────────────
 
 @app.websocket("/api/s2s")
-async def s2s_websocket(websocket: WebSocket):
+async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
     await websocket.accept()
-    print("Voice Chat WebSocket connected.")
+    print(f"Voice Chat WebSocket connected (Mode: {mode}).")
 
     # Per-session conversation history for context
-    conversation_history: List[Dict[str, str]] = []
+    conversation_history: List[Any] = []
     s2s_context: Dict[str, Any] = {
         "is_active": True,
         "visual_data": None,
-        "formula_context": None,   # optional formula JSON for context
+        "formula_context": None,
+        "visual_data_bytes": None,
+        "proactive_scan_done": False,
+        "scan_turn_count": 0,        # how many AI turns have happened in video_call
     }
 
-    SYSTEM_PROMPT = (
-        "You are FormulaForge AI, an expert cosmetic science assistant. "
-        "You speak naturally and helpfully — like a knowledgeable friend giving skincare advice. "
-        "Keep responses concise (2-4 sentences) since they will be spoken aloud. "
-        "If the user asks about a formula, ingredients, or skincare, give actionable advice. "
-        "Be warm, professional, and confident."
-    )
+    if mode == "video_call":
+        SYSTEM_PROMPT = (
+            "You are 'Dr. Veda,' a Senior AI Aesthetic Consultant conducting a live Skin Scan via webcam.\n\n"
+            "RESPOND ONLY WITH A VALID JSON OBJECT — no markdown, no code fences:\n"
+            "{\n"
+            '  "observations": [\n'
+            '    {"area": "forehead|left_cheek|right_cheek|nose|chin|jawline|under_eye",\n'
+            '     "condition": "acne_mild|acne_moderate|acne_severe|redness|rosacea|dryness|oiliness|hyperpigmentation|melasma|fine_lines|wrinkles|sun_damage|eczema|clear",\n'
+            '     "severity": "low|medium|high", "confidence": 0.0-1.0, "description": "Brief description"}\n'
+            '  ],\n'
+            '  "spoken_response": "What to say aloud — 1-3 sentences.",\n'
+            '  "positioning_request": null\n'
+            "}\n\n"
+            "MOST IMPORTANT RULE — ALWAYS ANSWER THE USER DIRECTLY:\n"
+            "- If the user asks HOW TO FIX, TREAT, or SOLVE their skin concerns, answer with specific actionable advice in spoken_response. Name ingredients (niacinamide, salicylic acid, etc.) and steps. Do NOT redirect back to scanning.\n"
+            "- If the user asks a question of ANY kind, answer it fully and helpfully in spoken_response.\n"
+            "- Only guide the scan (tilt left, move closer, etc.) when the user gives a neutral acknowledgment like 'OK', 'sure', 'yes', or says nothing meaningful.\n"
+            "- NEVER ignore a direct question. NEVER repeat the same observation twice.\n\n"
+            "IDENTITY & SCOPE:\n"
+            "- You analyze SKIN HEALTH ONLY. NEVER identify or name any individual.\n"
+            "- You are NOT a medical doctor — always recommend seeing a dermatologist for clinical conditions.\n\n"
+            "SCAN PHASES (only when user is not asking a question):\n"
+            "Phase 1 (turn 1): Greet briefly, share 2-3 skin observations, ask user to tilt for one zone.\n"
+            "Phase 2 (turns 2-3): Guide through facial zones one at a time.\n"
+            "Phase 3 (turn 4+): Summarize top 3 findings, recommend 2-3 active ingredients with % concentrations, offer to generate a custom formula.\n"
+        )
+    else:
+        SYSTEM_PROMPT = (
+            "You are Nova, an expert cosmetic chemist formulating products and advising a luxury skincare brand. "
+            "Your language is sophisticated, scientific, yet accessible. Answer quickly and concisely, avoiding jargon unless necessary. "
+            "You do not invent ingredients that are not commonly used, and you do not diagnose medical skin conditions. "
+            "Keep your responses relatively brief as they will be synthesized into voice."
+        )
+
+    async def _safe_send_json(payload: dict) -> bool:
+        """Send JSON; marks session inactive and returns False on any send error."""
+        if not s2s_context["is_active"]:
+            return False
+        try:
+            await websocket.send_json(payload)
+            return True
+        except Exception:
+            s2s_context["is_active"] = False
+            return False
+
+    async def _safe_send_bytes(data: bytes) -> bool:
+        """Send bytes; marks session inactive and returns False on any send error."""
+        if not s2s_context["is_active"]:
+            return False
+        try:
+            await websocket.send_bytes(data)
+            return True
+        except Exception:
+            s2s_context["is_active"] = False
+            return False
 
     async def send_status(status: str):
         """Send UI status update to frontend."""
-        try:
-            await websocket.send_json({"type": "status", "status": status})
-        except Exception:
-            pass
+        await _safe_send_json({"type": "status", "status": status})
 
     async def voice_respond(user_text: str):
-        """Full voice pipeline: get GPT response → send text + TTS audio."""
+        """Full voice pipeline: get Nova response → send text + TTS audio."""
         try:
+            if not s2s_context["is_active"]:
+                return  # WebSocket already closed — abort silently
+
             # 1. Send status: thinking
             await send_status("thinking")
 
-            # 2. Build messages with conversation history
-            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+            actual_prompt = user_text
 
-            # Add formula context if available
+            # 3. Build effective system prompt (base + optional context injections)
+            effective_system = SYSTEM_PROMPT
             if s2s_context.get("formula_context"):
-                messages.append({
-                    "role": "system",
-                    "content": f"Current formula context: {s2s_context['formula_context']}"
-                })
+                effective_system += f"\n\nFormula context: {s2s_context['formula_context']}"
+            if mode == "video_call" and s2s_context["scan_turn_count"] >= 3:
+                effective_system += (
+                    "\n\nYou have now analyzed several facial zones. "
+                    "Begin wrapping up: state your top 3 findings, name 2-3 recommended ingredients, "
+                    "and end with: 'Would you like me to generate a custom formula based on this scan?'"
+                )
 
-            # Add conversation history (last 10 turns)
-            messages.extend(conversation_history[-10:])
-            messages.append({"role": "user", "content": user_text})
+            # 4. Get AI response via Amazon Bedrock Nova (replaces OpenAI)
+            loop = asyncio.get_running_loop()
+            # Snapshot history before await so lambda captures the right values
+            _n = len(conversation_history)
+            _hist_snapshot: List[Any] = conversation_history[max(0, _n - 10):_n]  # type: ignore[index]
+            if mode == "video_call":
+                raw_response = await loop.run_in_executor(
+                    None,
+                    lambda: _nova_invoke_vc(
+                        actual_prompt,
+                        system=effective_system,
+                        image_bytes=s2s_context.get("visual_data_bytes"),
+                        image_media_type="image/jpeg",
+                        max_tokens=600,
+                        temperature=0.7,
+                        history=_hist_snapshot,
+                    ),
+                )
+                try:
+                    parsed_response = json.loads(raw_response)
+                    reply_text = parsed_response.get("spoken_response", "")
+                    if not reply_text:
+                        reply_text = "I'm analyzing your skin now."
 
-            # 3. Get GPT-4o-mini response
-            forge = ff.FormulaForge()
-            reply_text = forge.openai_mini.invoke(
-                user_text,
-                system=SYSTEM_PROMPT,
-                max_tokens=300,
-            )
+                    if "observations" in parsed_response:
+                        if "all_observations" not in s2s_context:
+                            s2s_context["all_observations"] = []
+                        s2s_context["all_observations"].extend(parsed_response["observations"])
+                        await _safe_send_json({
+                            "type": "observation",
+                            "data": parsed_response["observations"],
+                            "positioning": parsed_response.get("positioning_request"),
+                        })
+                except Exception as eval_err:
+                    print(f"[VideoCall] Nova JSON parse error: {eval_err}")
+                    # Nova returned free-text instead of JSON — use as spoken response
+                    reply_text = raw_response.strip()
+            else:
+                reply_text = await loop.run_in_executor(
+                    None,
+                    lambda: _nova_invoke_vc(
+                        actual_prompt,
+                        system=effective_system,
+                        image_bytes=s2s_context.get("visual_data_bytes"),
+                        image_media_type="image/jpeg",
+                        max_tokens=300,
+                        temperature=0.7,
+                        history=_hist_snapshot,
+                    ),
+                )
 
-            # 4. Save to history
-            conversation_history.append({"role": "user", "content": user_text})
+            # 5. Save to history
+            display_user_text = user_text
+            conversation_history.append({"role": "user", "content": actual_prompt})
             conversation_history.append({"role": "assistant", "content": reply_text})
 
+            # Increment turn counter and decide whether to suggest formula
+            if mode == "video_call":
+                s2s_context["scan_turn_count"] += 1
+            suggest_formula = (
+                mode == "video_call"
+                and s2s_context["scan_turn_count"] >= 4
+                and "custom formula" in reply_text.lower()
+            )
+
             # 5. Send text transcript to frontend
-            await websocket.send_json({
+            if not await _safe_send_json({
                 "type": "voice_response",
                 "text": reply_text,
-                "user_text": user_text,
-            })
+                "user_text": display_user_text,
+                "suggest_formula": suggest_formula,
+            }):
+                return  # Socket closed mid-response
 
-            # 6. Generate TTS audio and send
+            # 6. Generate TTS audio via Amazon Polly; fall back to Web Speech API
             await send_status("speaking")
             try:
-                audio_bytes = forge.openai_client.generate_speech(reply_text)
-                await websocket.send_bytes(audio_bytes)
+                loop = asyncio.get_running_loop()
+                audio_bytes = await loop.run_in_executor(None, _polly_speak, reply_text)
+                if not s2s_context["is_active"]:
+                    return  # Socket closed while waiting for Polly
+                if audio_bytes:
+                    await _safe_send_bytes(audio_bytes)
+                else:
+                    # Polly unavailable — tell the frontend to use its Web Speech API
+                    await _safe_send_json({"type": "tts_fallback", "text": reply_text})
+                    await _safe_send_json({"type": "speech_done"})
             except Exception as tts_err:
-                print(f"TTS error: {tts_err}")
-                # Send a signal that speaking is done even without audio
-                await websocket.send_json({"type": "speech_done"})
+                print(f"[TTS] Error: {tts_err}")
+                await _safe_send_json({"type": "speech_done"})
 
-            # 7. Ready for next input  
+            # 7. Ready for next input
             await send_status("idle")
 
         except Exception as e:
             print(f"Voice respond error: {e}")
             traceback.print_exc()
-            try:
-                await websocket.send_json({
-                    "type": "voice_response",
-                    "text": "I'm sorry, I had trouble processing that. Could you try again?",
-                    "user_text": user_text,
-                })
-                await send_status("idle")
-            except Exception:
-                pass
+            await _safe_send_json({
+                "type": "voice_response",
+                "text": "I'm sorry, I had trouble processing that. Could you try again?",
+                "user_text": user_text,
+            })
+            await send_status("idle")
 
     async def process_agentic_task(task_goal: str):
         """Agentic browser task orchestration."""
         await asyncio.sleep(1)
         print("Agentic task invoked for:", task_goal)
-        try:
-            await websocket.send_json({
-                "type": "act_status",
-                "status": "Executing Regulatory Scan, Sourcing, and PIF generation...",
-                "documents": [
-                    {"title": "Regulatory Scan", "summary": "Canadian & FDA compliance verified. Retinol within legal limits."},
-                    {"title": "Ingredient Sourcing", "summary": "Identified 3 suppliers for Squalane. Primary: Montreal Organics."},
-                    {"title": "Draft PIF & Marketing", "summary": "Product Information File finalized. 'Hydration Reimagined' copy generated."},
-                ],
-            })
-        except Exception:
-            pass
+        await _safe_send_json({
+            "type": "act_status",
+            "status": "Executing Regulatory Scan, Sourcing, and PIF generation...",
+            "documents": [
+                {"title": "Regulatory Scan", "summary": "Canadian & FDA compliance verified. Retinol within legal limits."},
+                {"title": "Ingredient Sourcing", "summary": "Identified 3 suppliers for Squalane. Primary: Montreal Organics."},
+                {"title": "Draft PIF & Marketing", "summary": "Product Information File finalized. 'Hydration Reimagined' copy generated."},
+            ],
+        })
 
     async def process_vision(task_goal: str):
         """GPT-4o Vision multimodal reasoning."""
         await asyncio.sleep(0.5)
         print(f"GPT-4o Vision processing: {task_goal}")
         s2s_context["visual_data"] = f"Analyzed context for: {task_goal}"
-        try:
-            await websocket.send_json({
-                "type": "omni_status",
-                "status": f"Visual data received. Processing: {task_goal}...",
-            })
-            # Voice response about the visual analysis
+        if await _safe_send_json({
+            "type": "omni_status",
+            "status": f"Visual data received. Processing: {task_goal}...",
+        }):
             await voice_respond(f"Describe what you found analyzing: {task_goal}")
-        except Exception:
-            pass
 
     try:
         # Send initial greeting
@@ -769,6 +1003,17 @@ async def s2s_websocket(websocket: WebSocket):
                 elif msg_type == "omni_image":
                     asyncio.create_task(process_vision(data.get("task", "")))
 
+                elif msg_type == "video_frame":
+                    try:
+                        b64_str = data.get("image", "")
+                        if "," in b64_str:
+                            b64_str = b64_str.split(",", 1)[1]
+                        import base64
+                        s2s_context["visual_data_bytes"] = base64.b64decode(b64_str)
+                        # Frame stored — Dr. Veda will use it when the user speaks
+                    except Exception as e:
+                        print(f"Error decoding video frame: {e}")
+
             elif "bytes" in message:
                 # Voice input: raw audio → Whisper → GPT → TTS
                 audio_bytes = message["bytes"]
@@ -777,16 +1022,25 @@ async def s2s_websocket(websocket: WebSocket):
 
                 await send_status("processing")
 
+                # For video_call: ask frontend for a fresh frame, then wait briefly
+                # so the frame arrives and is stored before we call voice_respond.
+                if mode == "video_call":
+                    await _safe_send_json({"type": "request_frame"})
+                    await asyncio.sleep(0.35)
+
                 try:
-                    forge = ff.FormulaForge()
-                    transcribed = forge.openai_client.transcribe_audio(audio_bytes)
-                    if transcribed and transcribed.strip():
-                        print(f"Whisper transcribed: {transcribed}")
+                    # STT stub — AWS Transcribe Streaming not yet configured.
+                    # The frontend's MediaRecorder sends audio but we skip it here
+                    # until the IAM streaming permissions are granted.
+                    # len > 100 guard (above) prevents micro-chunk spam.
+                    transcribed = ""   # TODO: replace with Transcribe Streaming SDK
+                    if transcribed and len(transcribed.strip()) > 2:
+                        print(f"[STT] Transcribed: {transcribed}")
                         await voice_respond(transcribed)
                     else:
                         await send_status("idle")
-                except Exception as whisper_err:
-                    print(f"Whisper error: {whisper_err}")
+                except Exception as stt_err:
+                    print(f"[STT] Error: {stt_err}")
                     await send_status("idle")
 
     except WebSocketDisconnect:

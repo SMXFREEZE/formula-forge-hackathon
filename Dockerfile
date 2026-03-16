@@ -19,8 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Node.js dependencies
 RUN npm ci --production
 
-# OpenAI API Key (set at runtime via -e or Render dashboard)
-ENV OPENAI_API_KEY=""
+# AWS credentials (set at runtime via -e or Render dashboard)
+# ENV AWS_ACCESS_KEY_ID=""
+# ENV AWS_SECRET_ACCESS_KEY=""
 
 # Copy application code
 COPY app.py .

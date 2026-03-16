@@ -2,12 +2,12 @@
 FormulaForge Demo Runner
 ========================
 Run with --mock to test locally without AWS credentials.
-Run without --mock to use real Amazon Nova 2 Lite via Bedrock.
+Run without --mock to use real AI models via Amazon Bedrock (Nova).
 
 Usage:
     python demo.py --mock                     # Mock mode, default query
     python demo.py --mock "vitamin C serum"   # Mock mode, custom query
-    python demo.py "anti-aging night cream"   # Real Nova, custom query
+    python demo.py "anti-aging night cream"   # Real AI, custom query
     FORGE_IMAGE=label.jpg python demo.py      # With product label image
 """
 
@@ -17,7 +17,7 @@ import sys
 import time
 import random
 
-# ── Mock Nova Client (for demos without AWS credentials) ─────────────────────
+# ── Mock Client (for demos without API credentials) ─────────────────────
 
 MOCK_INGREDIENTS_DB = {
     "default": [
@@ -40,7 +40,7 @@ MOCK_INGREDIENTS_DB = {
         {"name": "shea butter", "min_pct": 2.0, "max_pct": 15.0, "cost_per_pct": 0.10, "efficacy_score": 6.0, "category": "base"},
         {"name": "jojoba oil", "min_pct": 3.0, "max_pct": 20.0, "cost_per_pct": 0.12, "efficacy_score": 6.5, "category": "base"},
         {"name": "purified water", "min_pct": 20.0, "max_pct": 60.0, "cost_per_pct": 0.01, "efficacy_score": 3.0, "category": "base"},
-        {"name": "emulsifying wax", "min_pct": 2.0, "max_pct": 8.0, "cost_per_pct": 0.06, "efficacy_score": 3.5, "category": "base"},
+        {"name": "emulsifying wax", "min_pct": 2.0, "max_pct": 8.0, "cost_per_pct": 0.06, "efficacy_score": 3.0, "category": "base"},
         {"name": "phenoxyethanol", "min_pct": 0.5, "max_pct": 1.0, "cost_per_pct": 0.12, "efficacy_score": 3.0, "category": "preservative"},
         {"name": "tocopheryl acetate", "min_pct": 0.5, "max_pct": 2.0, "cost_per_pct": 0.15, "efficacy_score": 5.0, "category": "preservative"},
     ],
@@ -115,7 +115,8 @@ class MockNovaClient:
         pass
 
     def invoke(self, prompt: str, system: str = "", temperature: float = 0.3,
-               max_tokens: int = 4096, image_bytes=None, image_media_type="image/jpeg") -> str:
+               max_tokens: int = 4096, image_bytes=None, image_media_type="image/jpeg",
+               json_mode: bool = False, _retries: int = 0) -> str:
         time.sleep(0.5)  # Simulate API latency
 
         prompt_lower = prompt.lower()
@@ -137,6 +138,11 @@ class MockNovaClient:
         # Explain step
         return random.choice(MOCK_EXPLANATIONS)
 
+    def generate_speech(self, text: str, voice: str = "nova") -> bytes:
+        return b"mock_audio_bytes"
+
+    def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.webm") -> str:
+        return "this is a mock transcription"
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
@@ -150,7 +156,7 @@ def main():
         import formula_forge
         formula_forge.NovaClient = MockNovaClient
         from formula_forge import single_run, console
-        console.print("[bold yellow]>>> MOCK MODE (no AWS calls) <<<[/bold yellow]\n")
+        console.print("[bold yellow]>>> MOCK MODE (no API calls) <<<[/bold yellow]\n")
     else:
         from formula_forge import single_run
 
