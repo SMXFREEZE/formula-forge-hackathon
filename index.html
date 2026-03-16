@@ -604,6 +604,203 @@
       font-size: 1rem;
     }
 
+    .ing-table td.ing-cost-cell {
+      text-align: right;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .alt-btn {
+      background: none;
+      border: 1px solid var(--gold-dim);
+      color: var(--text-muted);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
+    .alt-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .alt-btn.loading { opacity: 0.5; pointer-events: none; }
+
+    /* ── Cost Breakdown Bar Chart ─────────────────────────── */
+    .cost-chart-section {
+      margin: 1.5rem 0 2.5rem;
+    }
+    .cost-chart-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.45rem;
+    }
+    .cost-chart-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      width: 160px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cost-chart-bar-wrap {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .cost-chart-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+      transition: width 0.6s ease;
+    }
+    .cost-chart-val {
+      font-size: 0.7rem;
+      color: var(--gold);
+      width: 45px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Name Generator Modal ─────────────────────────────── */
+    #nameGenModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #nameGenModal.active { display: flex; }
+    .namegen-panel {
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 10px;
+      padding: 2rem 2.5rem;
+      width: min(520px, 92vw);
+      position: relative;
+    }
+    .namegen-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .namegen-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .namegen-cards { display: flex; flex-direction: column; gap: 0.9rem; }
+    .namegen-card {
+      border: 1px solid var(--gold-dim);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .namegen-card:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+    .namegen-card.selected { border-color: var(--gold); background: rgba(201,168,76,0.12); }
+    .namegen-card-name {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 0.15rem;
+    }
+    .namegen-card-tagline {
+      font-size: 0.72rem;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .namegen-card-rationale {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .namegen-spinner {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .namegen-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+
+    /* ── Substitution Popover ─────────────────────────────── */
+    #substPopover {
+      display: none;
+      position: fixed;
+      z-index: 2100;
+      width: min(360px, 90vw);
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #substPopover.active { display: block; }
+    .subst-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .subst-reason-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .subst-reason-btn {
+      background: none;
+      border: 1px solid var(--gold-dim);
+      color: var(--text-muted);
+      border-radius: 3px;
+      padding: 2px 8px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .subst-reason-btn:hover, .subst-reason-btn.active {
+      border-color: var(--gold); color: var(--gold);
+    }
+    .subst-alt-card {
+      border-left: 2px solid var(--gold-dim);
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.2s;
+    }
+    .subst-alt-card:hover { border-left-color: var(--gold); background: rgba(201,168,76,0.05); }
+    .subst-alt-name { font-size: 0.88rem; color: var(--text); font-weight: 500; }
+    .subst-alt-pct { font-size: 0.7rem; color: var(--gold); }
+    .subst-alt-benefit { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .subst-alt-tradeoff { font-size: 0.68rem; color: var(--red); margin-top: 0.1rem; }
+    .subst-close {
+      position: absolute;
+      top: 0.6rem; right: 0.8rem;
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 1rem;
+    }
+
     /* Interactions */
     .interactions {
       display: flex;
@@ -2440,11 +2637,16 @@
         <thead>
           <tr>
             <th>Ingredient</th>
+            <th style="text-align:center;">Substitute</th>
             <th>Percentage</th>
           </tr>
         </thead>
         <tbody id="ing-tbody"></tbody>
       </table>
+
+      <!-- Cost Breakdown Chart -->
+      <h3 class="section-title" id="cost-chart-title" style="display:none;">Cost Distribution</h3>
+      <div class="cost-chart-section" id="cost-chart-section" style="display:none;"></div>
 
       <!-- Interactions -->
       <div id="interactions-section" style="display:none;">
@@ -2509,6 +2711,13 @@
           </svg>
           Factory Outreach
         </button>
+        <button class="btn-action" id="btn-generate-names" onclick="openNameGen()"
+          style="background:linear-gradient(135deg,rgba(201,168,76,0.15),transparent);border-color:var(--gold);color:var(--gold);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Generate Names
+        </button>
       </div>
 
       <input type="file" id="teardown-hidden-input" accept="image/*" style="display:none;"
@@ -2522,6 +2731,43 @@
 
       <div class="results-divider"></div>
     </section>
+  </div>
+
+  <!-- ── Name Generator Modal ────────────────────────── -->
+  <div id="nameGenModal" role="dialog" aria-modal="true" aria-label="Generate Product Names">
+    <div class="namegen-panel">
+      <button onclick="closeNameGen()" style="position:absolute;top:1rem;right:1.2rem;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;">✕</button>
+      <div class="namegen-title">Name Your Formula</div>
+      <div class="namegen-sub">Nova AI — 3 Luxury Name Options</div>
+      <div id="nameGenContent">
+        <div class="namegen-spinner">
+          <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+          Consulting Nova for name ideas…
+        </div>
+      </div>
+      <div class="namegen-actions">
+        <button class="btn-action" onclick="closeNameGen()">Cancel</button>
+        <button class="btn-action" id="nameGenApplyBtn" style="display:none;background:var(--gold);color:var(--bg);border-color:var(--gold);" onclick="applySelectedName()">Apply Name</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Substitution Popover ──────────────────────────── -->
+  <div id="substPopover" role="dialog" aria-label="Suggest Alternatives">
+    <button class="subst-close" onclick="closeSubstPopover()">✕</button>
+    <div class="subst-title" id="substIngName">Alternatives</div>
+    <div class="subst-reason-row" id="substReasonRow">
+      <button class="subst-reason-btn active" data-reason="cost" onclick="substSelectReason(this)">Cost</button>
+      <button class="subst-reason-btn" data-reason="availability" onclick="substSelectReason(this)">Availability</button>
+      <button class="subst-reason-btn" data-reason="sensitivity" onclick="substSelectReason(this)">Sensitivity</button>
+      <button class="subst-reason-btn" data-reason="vegan" onclick="substSelectReason(this)">Vegan</button>
+    </div>
+    <div id="substAltList">
+      <div class="namegen-spinner" style="padding:1rem 0;">
+        <div class="spinner" style="margin:0 auto 0.5rem;width:20px;height:20px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        Fetching alternatives…
+      </div>
+    </div>
   </div>
 
   <!-- ── Footer ───────────────────────────────────────── -->
@@ -2591,6 +2837,9 @@
       $('#interactions-section').style.display = 'none';
       $('#ing-tbody').innerHTML = '';
       $('#interactions-list').innerHTML = '';
+      $('#cost-chart-section').innerHTML = '';
+      $('#cost-chart-section').style.display = 'none';
+      $('#cost-chart-title').style.display = 'none';
       // Reset video player
       const videoEl = $('#turntable-video');
       if (videoEl) { videoEl.pause(); videoEl.removeAttribute('src'); }
@@ -2631,9 +2880,35 @@
       const tbody = $('#ing-tbody');
       sorted.forEach(([name, pct]) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${name}</td><td>${pct.toFixed(2)}%</td>`;
+        tr.innerHTML = `
+          <td>${name}<button class="alt-btn" onclick="openSubst(event,'${name.replace(/'/g,"\\'")}',${pct.toFixed(4)})">≈ Alt</button></td>
+          <td style="text-align:center;"></td>
+          <td>${pct.toFixed(2)}%</td>`;
         tbody.appendChild(tr);
       });
+
+      // Cost breakdown chart
+      const costData = formula.ingredients
+        ? Object.entries(formula.ingredients)
+            .filter(([, v]) => v > 0.001)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+        : [];
+      if (costData.length > 0) {
+        const maxPct = costData[0][1];
+        const chartHtml = costData.map(([n, v]) => `
+          <div class="cost-chart-bar-row">
+            <div class="cost-chart-label" title="${n}">${n}</div>
+            <div class="cost-chart-bar-wrap">
+              <div class="cost-chart-bar-fill" style="width:${Math.round((v/maxPct)*100)}%"></div>
+            </div>
+            <div class="cost-chart-val">${v.toFixed(1)}%</div>
+          </div>`).join('');
+        const chartSection = $('#cost-chart-section');
+        chartSection.innerHTML = chartHtml;
+        chartSection.style.display = 'block';
+        $('#cost-chart-title').style.display = 'block';
+      }
 
       // Interactions
       const interactions = data.interactions || [];
@@ -4942,15 +5217,13 @@
     }
 
     @keyframes msgFade {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(18px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
 
     .voice-mic-btn {
@@ -5181,19 +5454,41 @@
     <video id="video-call-video" autoplay playsinline muted
       style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; transform: scaleX(-1);"></video>
 
+    <!-- Scan HUD: floating observation badges over the camera -->
+    <div id="vcScanHud" style="position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;"></div>
+
     <!-- Voice Elements Overlay -->
     <div
-      style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; width: 100%; padding-bottom: 2rem; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);">
+      style="position:relative; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; width: 100%; padding-bottom: 2rem; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.45) 35%, transparent 65%);">
+
+      <!-- Top bar: Dr. Veda branding + scan progress -->
+      <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1.2rem;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);">
+        <div style="display:flex;align-items:center;gap:0.55rem;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#c9a84c;box-shadow:0 0 6px #c9a84c;"></div>
+          <span style="color:#c9a84c;font-size:0.7rem;font-weight:700;letter-spacing:3px;font-family:'Courier New',monospace;">DR. VEDA — LIVE SKIN SCAN</span>
+        </div>
+        <span id="vcScanTurnBadge" style="color:rgba(255,255,255,0.5);font-size:0.65rem;letter-spacing:2px;font-family:'Courier New',monospace;"></span>
+      </div>
+
+      <!-- Observation panel — slides in from the right -->
+      <div id="vcObsPanel" style="position:absolute;top:3.5rem;right:0;width:260px;max-height:calc(100% - 7rem);overflow-y:auto;padding:0.5rem;display:flex;flex-direction:column;gap:0.4rem;"></div>
+
       <div class="voice-orb" id="vcVoiceOrb" style="width:100px; height:100px; margin-bottom: 1rem;">
         <svg class="voice-orb-icon" viewBox="0 0 24 24" style="width: 30px; height: 30px;">
           <path
             d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
         </svg>
       </div>
-      <div class="voice-status" id="vcVoiceStatus" style="margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+      <div class="voice-status" id="vcVoiceStatus" style="margin-bottom: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
         CONNECTING...</div>
       <div class="voice-transcript" id="vcVoiceTranscript"
-        style="max-height: 15vh; max-width: 600px; overflow-y: auto; background:transparent;"></div>
+        style="max-height: 18vh; max-width: 600px; width:90%; overflow-y: auto; background:transparent; margin-bottom:0.5rem;"></div>
+
+      <!-- "Generate Formula" CTA — shown when Dr. Veda offers it -->
+      <div id="vcFormulaCtaRow" style="display:none;margin-bottom:0.75rem;">
+        <button onclick="vcGenerateFormula()" style="background:linear-gradient(135deg,#c9a84c,#a0762a);color:#fff;border:none;padding:0.55rem 1.6rem;border-radius:4px;font-size:0.78rem;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(201,168,76,0.4);">⚗ GENERATE FORMULA</button>
+      </div>
+
       <button class="voice-mic-btn" id="vcVoiceMicBtn">
         <svg viewBox="0 0 24 24">
           <path
@@ -5267,8 +5562,11 @@
 
       document.getElementById('videoCallModal').classList.add('active');
 
-      // Clear transcript
+      // Clear transcript and HUD
       document.getElementById('vcVoiceTranscript').innerHTML = '';
+      const obsp = document.getElementById('vcObsPanel'); if (obsp) obsp.innerHTML = '';
+      const cta = document.getElementById('vcFormulaCtaRow'); if (cta) cta.style.display = 'none';
+      const badge = document.getElementById('vcScanTurnBadge'); if (badge) badge.textContent = '';
 
       // 1. Start Camera
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } })
@@ -5312,14 +5610,23 @@
           } else if (data.type === 'voice_response') {
             addTranscriptMsg('user', data.user_text);
             addTranscriptMsg('ai', data.text);
+            if (data.suggest_formula) {
+              const cta = document.getElementById('vcFormulaCtaRow');
+              if (cta) cta.style.display = 'block';
+            }
+            // Update turn badge
+            const badge = document.getElementById('vcScanTurnBadge');
+            if (badge) {
+              const turns = document.getElementById('vcVoiceTranscript')?.querySelectorAll('.ai').length || 0;
+              badge.textContent = turns > 0 ? `TURN ${turns} · SCAN ACTIVE` : '';
+            }
           } else if (data.type === 'tts_fallback') {
             // Polly unavailable — use browser speech synthesis
             _browserSpeakFallback(data.text);
           } else if (data.type === 'speech_done') {
             setVoiceStatus('idle');
           } else if (data.type === 'observation') {
-            // Skin observation data — could be displayed in UI later
-            console.log('[VideoCall] observations:', data.data);
+            renderVcObservations(data.data || []);
           }
         } else if (evt.data instanceof Blob) {
           // TTS audio blob from Polly — play it
@@ -5534,6 +5841,211 @@
         }
       });
     }
+
+    // ── Skin Scan Observation Renderer ──────────────────────────────────
+    const _obsColorMap = {
+      acne_mild: '#e8a020', acne_moderate: '#e05820', acne_severe: '#d64045',
+      redness: '#e05820', rosacea: '#c9504a', dryness: '#8b7355', oiliness: '#7aab6e',
+      hyperpigmentation: '#8b6a3e', melasma: '#7a5a2e', fine_lines: '#8b8b9e',
+      wrinkles: '#6a6a8e', sun_damage: '#c98a20', eczema: '#d44040',
+      clear: '#3daa73', default: '#4a90d9',
+    };
+
+    function renderVcObservations(observations) {
+      const panel = document.getElementById('vcObsPanel');
+      if (!panel || !observations.length) return;
+      observations.forEach(obs => {
+        const color = _obsColorMap[obs.condition] || _obsColorMap.default;
+        const sev = obs.severity === 'high' ? '●●●' : obs.severity === 'medium' ? '●●○' : '●○○';
+        const card = document.createElement('div');
+        card.style.cssText = `background:rgba(0,0,0,0.72);border-left:3px solid ${color};border-radius:3px;padding:0.35rem 0.55rem;animation:fadeInRight 0.35s ease;`;
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+            <span style="color:${color};font-size:0.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">${(obs.area||'').replace(/_/g,' ')}</span>
+            <span style="color:${color};font-size:0.6rem;">${sev}</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.85);font-size:0.65rem;line-height:1.3;">${obs.description||obs.condition||''}</div>`;
+        panel.appendChild(card);
+        panel.scrollTop = panel.scrollHeight;
+        // Auto-fade after 12 seconds
+        setTimeout(() => { card.style.transition = 'opacity 1.5s'; card.style.opacity = '0'; setTimeout(() => card.remove(), 1500); }, 12000);
+      });
+    }
+
+    // ── Generate Formula from Scan ──────────────────────────────────────
+    function vcGenerateFormula() {
+      const cta = document.getElementById('vcFormulaCtaRow');
+      if (cta) cta.style.display = 'none';
+      // Build a goal from accumulated observations in the transcript
+      const aiLines = Array.from(document.querySelectorAll('#vcVoiceTranscript .ai')).map(el => el.textContent.replace('AI: ', '')).join(' ');
+      const goal = aiLines.length > 20 ? aiLines.slice(0, 300) : 'Custom formula based on live skin scan';
+      // Prefill the main form and close the modal
+      const inputEl = document.getElementById('formulaInput') || document.querySelector('input[name="user_input"], textarea[name="user_input"]');
+      if (inputEl) inputEl.value = goal;
+      closeVideoCallModal();
+      // Scroll to generator
+      const gen = document.getElementById('generator') || document.querySelector('.main-form, form');
+      if (gen) gen.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // NOVA PRODUCT NAME GENERATOR
+    // ═════════════════════════════════════════════════════════════════════
+
+    let _nameGenSelected = null;
+
+    async function openNameGen() {
+      const modal = document.getElementById('nameGenModal');
+      modal.classList.add('active');
+      _nameGenSelected = null;
+      document.getElementById('nameGenApplyBtn').style.display = 'none';
+      document.getElementById('nameGenContent').innerHTML = `
+        <div class="namegen-spinner">
+          <div class="spinner" style="margin:0 auto 0.8rem;width:26px;height:26px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+          Consulting Nova for name ideas…
+        </div>`;
+
+      try {
+        const d = window._lastResultData || {};
+        const formula = d.formula_v2 || d.formula_v1 || {};
+        const resp = await fetch('/generate_names', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_input: d.user_input || '',
+            brand_vision: d.brand_vision || '',
+            formula_json: JSON.stringify(formula),
+          }),
+        });
+        const data = await resp.json();
+        const names = data.names || [];
+        if (!names.length) throw new Error('No names returned');
+
+        const cardsHtml = names.map((n, i) => `
+          <div class="namegen-card" data-idx="${i}" onclick="nameGenSelect(this,'${(n.name||'').replace(/'/g,"\\'")}')">
+            <div class="namegen-card-name">${n.name || ''}</div>
+            <div class="namegen-card-tagline">${n.tagline || ''}</div>
+            <div class="namegen-card-rationale">${n.rationale || ''}</div>
+          </div>`).join('');
+        document.getElementById('nameGenContent').innerHTML = `<div class="namegen-cards">${cardsHtml}</div>`;
+      } catch (e) {
+        document.getElementById('nameGenContent').innerHTML =
+          `<p style="color:var(--red);font-size:0.85rem;">Could not generate names: ${e.message}</p>`;
+      }
+    }
+
+    function nameGenSelect(el, name) {
+      document.querySelectorAll('.namegen-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      _nameGenSelected = name;
+      document.getElementById('nameGenApplyBtn').style.display = 'inline-flex';
+    }
+
+    function applySelectedName() {
+      if (!_nameGenSelected) return;
+      // Update brand name in the result data and visible UI
+      if (window._lastResultData) window._lastResultData.brand_name = _nameGenSelected;
+      const brandEls = document.querySelectorAll('#viewer-brand-name, #viewer-video-brand, #res-brand-name');
+      brandEls.forEach(el => { if (el) el.textContent = _nameGenSelected; });
+      closeNameGen();
+    }
+
+    function closeNameGen() {
+      document.getElementById('nameGenModal').classList.remove('active');
+    }
+
+    // Close name modal on backdrop click
+    document.getElementById('nameGenModal').addEventListener('click', function(e) {
+      if (e.target === this) closeNameGen();
+    });
+
+
+    // ═════════════════════════════════════════════════════════════════════
+    // INGREDIENT SUBSTITUTION ASSISTANT
+    // ═════════════════════════════════════════════════════════════════════
+
+    let _substCurrent = { ingredient: '', pct: 0, reason: 'cost' };
+
+    function openSubst(event, ingName, pct) {
+      event.stopPropagation();
+      const btn = event.currentTarget;
+      _substCurrent = { ingredient: ingName, pct, reason: 'cost' };
+
+      // Reset reason buttons
+      document.querySelectorAll('.subst-reason-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.reason === 'cost');
+      });
+
+      document.getElementById('substIngName').textContent = `Alternatives for ${ingName}`;
+      const popover = document.getElementById('substPopover');
+      popover.classList.add('active');
+
+      // Position near the button
+      const rect = btn.getBoundingClientRect();
+      const pw = 360;
+      let left = rect.left;
+      if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
+      popover.style.left = left + 'px';
+      popover.style.top = Math.min(rect.bottom + 6, window.innerHeight - 320) + 'px';
+
+      _fetchAlternatives();
+    }
+
+    async function _fetchAlternatives() {
+      document.getElementById('substAltList').innerHTML = `
+        <div class="namegen-spinner" style="padding:1rem 0;">
+          <div class="spinner" style="margin:0 auto 0.5rem;width:20px;height:20px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;"></div>
+          Fetching alternatives…
+        </div>`;
+      try {
+        const d = window._lastResultData || {};
+        const formula = d.formula_v2 || d.formula_v1 || {};
+        const resp = await fetch('/suggest_alternatives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredient: _substCurrent.ingredient,
+            percentage: _substCurrent.pct,
+            reason: _substCurrent.reason,
+            formula_json: JSON.stringify(formula),
+          }),
+        });
+        const data = await resp.json();
+        const alts = data.alternatives || [];
+        if (!alts.length) throw new Error('No alternatives found');
+
+        const html = alts.map(a => `
+          <div class="subst-alt-card" title="Click to copy name">
+            <div class="subst-alt-name">${a.name || ''} <span class="subst-alt-pct">${a.suggested_pct || ''}</span></div>
+            <div class="subst-alt-benefit">${a.benefit || ''}</div>
+            ${a.tradeoff ? `<div class="subst-alt-tradeoff">⚠ ${a.tradeoff}</div>` : ''}
+          </div>`).join('');
+        document.getElementById('substAltList').innerHTML = html;
+      } catch (e) {
+        document.getElementById('substAltList').innerHTML =
+          `<p style="color:var(--red);font-size:0.8rem;padding:0.5rem 0;">Error: ${e.message}</p>`;
+      }
+    }
+
+    function substSelectReason(btn) {
+      document.querySelectorAll('.subst-reason-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _substCurrent.reason = btn.dataset.reason;
+      _fetchAlternatives();
+    }
+
+    function closeSubstPopover() {
+      document.getElementById('substPopover').classList.remove('active');
+    }
+
+    // Close popover on outside click
+    document.addEventListener('click', function(e) {
+      const pop = document.getElementById('substPopover');
+      if (pop.classList.contains('active') && !pop.contains(e.target) && !e.target.classList.contains('alt-btn')) {
+        closeSubstPopover();
+      }
+    });
+
 
     function _browserSpeakFallback(text) {
       if (!text) return;

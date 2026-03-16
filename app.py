@@ -3,13 +3,14 @@ FormulaForge Web Application
 =============================
 FastAPI backend that wraps the FormulaForge agentic pipeline.
 Uses Server-Sent Events (SSE) for real-time pipeline progress.
+AI: Amazon Bedrock Nova Lite (multimodal) + Amazon Polly (neural TTS).
 
 Launch:
     uvicorn app:app --host 0.0.0.0 --port 8000
 
 Requires:
-    pip install fastapi uvicorn python-multipart openai
-    OPENAI_API_KEY environment variable set
+    pip install fastapi uvicorn python-multipart boto3 botocore
+    AWS credentials configured (AWS_PROFILE or env vars)
 """
 
 from __future__ import annotations
@@ -64,11 +65,15 @@ async def download_file(filename: str):
     filepath = os.path.join(OUTPUT_DIR, safe)
     if not os.path.exists(filepath):
         raise HTTPException(404, f"File not found: {safe}")
-    return FileResponse(
-        filepath,
-        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        filename=safe,
-    )
+    ext = Path(safe).suffix.lower()
+    media_types = {
+        ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".pdf":  "application/pdf",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }
+    media_type = media_types.get(ext, "application/octet-stream")
+    return FileResponse(filepath, media_type=media_type, filename=safe)
 
 
 # ── Serve generated images ────────────────────────────────────────────
@@ -364,7 +369,7 @@ def _run_pipeline(job_id: str):
 
         # ── Step 8: AI Turntable Video ──
         turntable_video = None
-        emit("product_video", "running", {"detail": "Rendering AI-Generated Turntable Video via DALL-E 3..."})
+        emit("product_video", "running", {"detail": "Rendering AI-Generated Product Visualization via Nova Canvas..."})
         try:
             video_path = forge.generate_turntable_video(user_input, OUTPUT_DIR, canvas_image_path=canvas_image_path)
             if video_path:
@@ -443,13 +448,14 @@ async def sse_events(client_id: str):
             # Check if job is finished
             if job.get("status") in ["complete", "failed"]:
                 if job["status"] == "complete":
-                    # Send one final event with the full output payload
-                    final_payload = {
-                        "step": "complete",
-                        "status": "success",
-                        "result": job.get("result", {})
-                    }
-                    yield f"data: {json.dumps(final_payload)}\n\n"
+                    yield f"data: {json.dumps({'step': 'complete', 'status': 'success', 'result': job.get('result', {})})}\n\n"
+                else:
+                    # Surface the error reason so the frontend can show it
+                    err_event = next(
+                        (e for e in reversed(job["events"]) if e.get("status") == "failed"),
+                        {"data": {"error": "Pipeline failed"}},
+                    )
+                    yield f"data: {json.dumps({'step': 'pipeline_failed', 'status': 'failed', 'error': err_event.get('data', {}).get('error', 'Unknown error')})}\n\n"
                 break
             
             await asyncio.sleep(0.5)
@@ -571,12 +577,12 @@ async def campaign_endpoint(req: CampaignRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ── OpenAI o3-mini & Outreach Endpoints ───────────────────────────────
+# ── Nova Pro Analysis & Outreach Endpoints ────────────────────────────
 
- # ── 3. Clinical & Patent Review (o3-mini deep reasoning) ──
+# ── Clinical & Patent Review (Nova Pro deep reasoning) ──
 @app.post("/premier_analysis")
 async def premier_analysis(req: dict):
-    # Use o3-mini for clinical & patent review (deep reasoning)
+    # Nova Pro for clinical & patent review
     try:
         forge = ff.FormulaForge()
         brand = req.get("brand_name", "FormulaForge Maison")
@@ -632,20 +638,24 @@ async def competitor_teardown_endpoint(
 
 _VC_NOVA_MODEL = "amazon.nova-lite-v1:0"
 _VC_AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+_VC_NOVA_CLIENT = None  # module-level cache — created once on first use
 
 
 def _vc_nova_client():
-    """Return a lazily created Bedrock Runtime client for the video call."""
-    import boto3
-    from botocore.config import Config as _BotoConfig
-    return boto3.client(
-        "bedrock-runtime",
-        region_name=_VC_AWS_REGION,
-        config=_BotoConfig(
-            retries={"max_attempts": 2, "mode": "adaptive"},
-            read_timeout=90,
-        ),
-    )
+    """Return a cached Bedrock Runtime client (created once per process)."""
+    global _VC_NOVA_CLIENT
+    if _VC_NOVA_CLIENT is None:
+        import boto3
+        from botocore.config import Config as _BotoConfig
+        _VC_NOVA_CLIENT = boto3.client(
+            "bedrock-runtime",
+            region_name=_VC_AWS_REGION,
+            config=_BotoConfig(
+                retries={"max_attempts": 2, "mode": "adaptive"},
+                read_timeout=90,
+            ),
+        )
+    return _VC_NOVA_CLIENT
 
 
 def _nova_invoke_vc(prompt: str, system: str,
@@ -843,7 +853,7 @@ async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
                     "and end with: 'Would you like me to generate a custom formula based on this scan?'"
                 )
 
-            # 4. Get AI response via Amazon Bedrock Nova (replaces OpenAI)
+            # 4. Get AI response via Amazon Bedrock Nova
             loop = asyncio.get_running_loop()
             # Snapshot history before await so lambda captures the right values
             _n = len(conversation_history)
@@ -962,9 +972,9 @@ async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
         })
 
     async def process_vision(task_goal: str):
-        """GPT-4o Vision multimodal reasoning."""
+        """Nova multimodal vision reasoning."""
         await asyncio.sleep(0.5)
-        print(f"GPT-4o Vision processing: {task_goal}")
+        print(f"[NovaVision] Processing: {task_goal}")
         s2s_context["visual_data"] = f"Analyzed context for: {task_goal}"
         if await _safe_send_json({
             "type": "omni_status",
@@ -1008,14 +1018,13 @@ async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
                         b64_str = data.get("image", "")
                         if "," in b64_str:
                             b64_str = b64_str.split(",", 1)[1]
-                        import base64
                         s2s_context["visual_data_bytes"] = base64.b64decode(b64_str)
                         # Frame stored — Dr. Veda will use it when the user speaks
                     except Exception as e:
                         print(f"Error decoding video frame: {e}")
 
             elif "bytes" in message:
-                # Voice input: raw audio → Whisper → GPT → TTS
+                # Voice input: raw audio → AWS Transcribe → Nova → Polly TTS
                 audio_bytes = message["bytes"]
                 if len(audio_bytes) < 100:
                     continue  # Skip empty/tiny audio chunks
@@ -1085,6 +1094,98 @@ async def ingredient_safety(req: SafetyCheckRequest):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ── Nova Product Name Generator ───────────────────────────────────────
+
+class NamingRequest(BaseModel):
+    user_input: str = ""
+    brand_vision: str = ""
+    formula_json: str = "{}"
+
+@app.post("/generate_names")
+async def generate_names(req: NamingRequest):
+    """Ask Nova Pro to generate 3 luxury product name options for the formula."""
+    try:
+        formula = json.loads(req.formula_json or "{}")
+        top_ings = sorted(
+            [(k, v) for k, v in formula.get("ingredients", {}).items() if v > 0.1],
+            key=lambda x: -x[1]
+        )[:5]  # type: ignore[index]
+        ing_str = ", ".join(f"{k} ({v:.1f}%)" for k, v in top_ings) or "custom blend"
+
+        prompt = (
+            f"You are a luxury cosmetics brand naming expert.\n"
+            f"Formula goal: {req.user_input}\n"
+            f"Key ingredients: {ing_str}\n"
+            f"Brand vision: {req.brand_vision or 'sophisticated, science-forward, premium'}\n\n"
+            "Generate exactly 3 distinct, luxury product name options. Each must be:\n"
+            "- 1-4 words, evocative and premium\n"
+            "- Unique (no generic 'Glow Serum' type names)\n"
+            "- Inspired by the ingredients, science, or brand vision\n\n"
+            "Respond ONLY with valid JSON:\n"
+            '{"names": ['
+            '  {"name": "...", "tagline": "...", "rationale": "..."},'
+            '  {"name": "...", "tagline": "...", "rationale": "..."},'
+            '  {"name": "...", "tagline": "...", "rationale": "..."}'
+            ']}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a luxury brand naming specialist.", max_tokens=600, temperature=0.85),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"names": []}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Ingredient Substitution Assistant ────────────────────────────────
+
+class SubstitutionRequest(BaseModel):
+    ingredient: str
+    percentage: float = 0.0
+    reason: str = "cost"  # cost | availability | sensitivity | vegan
+    formula_json: str = "{}"
+
+@app.post("/suggest_alternatives")
+async def suggest_alternatives(req: SubstitutionRequest):
+    """Nova-powered ingredient substitution — returns 3 alternatives with rationale."""
+    try:
+        formula = json.loads(req.formula_json or "{}")
+        other_ings = [k for k in formula.get("ingredients", {}) if k.lower() != req.ingredient.lower()]
+        context_str = ", ".join(other_ings[:8]) if other_ings else "none"
+
+        prompt = (
+            f"You are a senior cosmetic chemist.\n"
+            f"The formula currently uses: {req.ingredient} at {req.percentage:.2f}%.\n"
+            f"Other ingredients in the formula: {context_str}.\n"
+            f"Reason for substitution: {req.reason}.\n\n"
+            "Suggest exactly 3 alternative ingredients. For each:\n"
+            "- Must be compatible with the other formula ingredients\n"
+            "- Must serve a similar functional role\n"
+            "- Include suggested % range\n\n"
+            "Respond ONLY with valid JSON:\n"
+            '{"alternatives": ['
+            '  {"name": "...", "suggested_pct": "X-Y%", "benefit": "...", "tradeoff": "..."},'
+            '  {"name": "...", "suggested_pct": "X-Y%", "benefit": "...", "tradeoff": "..."},'
+            '  {"name": "...", "suggested_pct": "X-Y%", "benefit": "...", "tradeoff": "..."}'
+            ']}'
+        )
+        raw = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: _nova_invoke_vc(prompt, system="You are a senior cosmetic chemist.", max_tokens=500, temperature=0.4),
+        )
+        match = re.search(r'\{[\s\S]*\}', raw)
+        if match:
+            return json.loads(match.group())
+        return {"alternatives": []}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ── Health check ──────────────────────────────────────────────────────
 

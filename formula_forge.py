@@ -27,7 +27,6 @@ import os
 import re
 import subprocess
 import tempfile
-import pyttsx3
 import sys
 import time
 import traceback
@@ -45,6 +44,8 @@ try:
     HAS_BOTO3 = True
 except ImportError:
     HAS_BOTO3 = False
+
+# All TTS is Amazon Polly (neural) only
 from rich.columns import Columns
 from rich.console import Console
 from rich.markup import escape
@@ -61,9 +62,6 @@ from rich import box
 MODEL_ID = "amazon.nova-pro-v1:0"
 MODEL_MINI_ID = "amazon.nova-lite-v1:0"
 MODEL_REASONING_ID = "amazon.nova-pro-v1:0" # Fallback since Nova doesn't have an o3 equivalent
-DALLE_MODEL_ID = "amazon.nova-canvas-v1:0"
-TTS_MODEL_ID = "polly"
-WHISPER_MODEL_ID = "transcribe"
 MAX_REFINEMENT_LOOPS = int(os.environ.get("FORGE_MAX_LOOPS", "2"))
 DEFAULT_BUDGET = 15.0          # $/100g default budget ceiling
 SOLVER_TIME_LIMIT = 30         # seconds
@@ -255,56 +253,25 @@ class NovaClient:
         except Exception as exc:
             raise RuntimeError(f"Unexpected error calling Bedrock: {exc}") from exc
 
-    def synthesize_speech(self, text: str, voice_id: str = "Ruth") -> Optional[bytes]:
-        """Convert text to speech using Amazon Polly, with fallback for access denied."""
+    def synthesize_speech(self, text: str, voice_id: str = "Joanna") -> Optional[bytes]:
+        """Convert text to speech using Amazon Polly (neural). Returns None on failure."""
         if not HAS_BOTO3:
             console.print("  [red]boto3 required for Amazon Polly TTS.[/red]")
-            return self._fallback_tts(text)
+            return None
 
         try:
             resp = self._polly.synthesize_speech(
                 Text=text,
                 OutputFormat="mp3",
                 VoiceId=voice_id,
-                Engine="generative"
+                Engine="neural",
             )
             return resp["AudioStream"].read()
         except botocore.exceptions.ClientError as e:
-            err_code = e.response.get("Error", {}).get("Code")
-            console.print(f"  [yellow]Polly error: {e}[/yellow]")
-            if err_code in ["AccessDeniedException", "UnrecognizedClientException", "InvalidClientTokenId"]:
-                console.print("  [yellow]IAM user lacks polly:SynthesizeSpeech permission. Falling back to offline pyttsx3...[/yellow]")
-                return self._fallback_tts(text)
-            return self._fallback_tts(text)
+            console.print(f"  [yellow]Polly error ({e.response.get('Error', {}).get('Code')}): TTS unavailable.[/yellow]")
+            return None
         except Exception as e:
             console.print(f"  [yellow]Polly unexpected error: {e}[/yellow]")
-            return self._fallback_tts(text)
-
-    def _fallback_tts(self, text: str) -> Optional[bytes]:
-        """Offline Text-To-Speech fallback using pyttsx3 when Polly fails."""
-        try:
-            engine = pyttsx3.init()
-            # Try to pick a female voice to match 'Ruth'
-            voices = engine.getProperty('voices')
-            for voice in voices:
-                if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
-                    engine.setProperty('voice', voice.id)
-                    break
-                    
-            engine.setProperty('rate', 160) # slightly slower, more conversational
-            
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-                tmp_path = f.name
-                
-            engine.save_to_file(text, tmp_path)
-            engine.runAndWait()
-            
-            with open(tmp_path, "rb") as f:
-                audio_bytes = f.read()
-            os.remove(tmp_path)
-            return audio_bytes
-        except Exception as e:
-            console.print(f"  [red]Offline TTS fallback failed: {e}[/red]")
             return None
 
     def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.webm") -> str:
@@ -648,8 +615,8 @@ class FormulaForge:
     )
 
     def __init__(self):
-        self.openai_client = NovaClient(model_id=MODEL_ID)
-        self.openai_mini = NovaClient(model_id=MODEL_MINI_ID)
+        self.nova_client = NovaClient(model_id=MODEL_ID)
+        self.nova_mini = NovaClient(model_id=MODEL_MINI_ID)
         self.solver = FormulaSolver()
 
     # chat_with_formula is defined later in the class (see below)
@@ -670,7 +637,7 @@ class FormulaForge:
             "Hyaluronic Acid, and Peptides.'\n"
             "Return ONLY the goal text, no quotes, no extra chat."
         )
-        return self.openai_client.invoke(
+        return self.nova_client.invoke(
             prompt,
             system=self.SYSTEM_PROMPT,
             image_bytes=image_bytes,
@@ -735,7 +702,7 @@ class FormulaForge:
                 "Output ONLY the JSON array, no other text."
             )
 
-        raw = self.openai_client.invoke(
+        raw = self.nova_client.invoke(
             prompt,
             system=self.SYSTEM_PROMPT,
             image_bytes=image_bytes,
@@ -792,7 +759,7 @@ class FormulaForge:
             "Do NOT output JSON or code fences. Use clear, elegant language "
             "suitable for a luxury brand internal report."
         )
-        result = self.openai_client.invoke(
+        result = self.nova_client.invoke(
             prompt,
             system=f"You are an expert cosmetic chemist writing a luxury brand report in {language}.",
             max_tokens=2048,
@@ -837,7 +804,7 @@ class FormulaForge:
             "After the marker, output ONLY the JSON array."
         )
 
-        raw = self.openai_client.invoke(prompt, system=self.SYSTEM_PROMPT, max_tokens=3000)
+        raw = self.nova_client.invoke(prompt, system=self.SYSTEM_PROMPT, max_tokens=3000)
 
         # Split evaluation text from refinements JSON
         evaluation = raw
@@ -926,7 +893,7 @@ class FormulaForge:
         )
 
         # Override the global JSON rule for narrative output
-        return self.openai_client.invoke(
+        return self.nova_client.invoke(
             prompt,
             system=f"You are a cosmetic chemistry senior reviewer translating into {language}.",
             max_tokens=1500,
@@ -965,7 +932,7 @@ class FormulaForge:
             '{"name": "...", "vision": "...", "palette": {"primary": "...", "secondary": "...", "gold": "...", "accent": "..."}}\n'
             "No markdown fences. No extra text."
         )
-        raw = self.openai_client.invoke(prompt, system=self.SYSTEM_PROMPT, max_tokens=500, json_mode=True)
+        raw = self.nova_client.invoke(prompt, system=self.SYSTEM_PROMPT, max_tokens=500, json_mode=True)
         try:
             match = re.search(r'\{[\s\S]*\}', raw)
             if match:
@@ -1000,7 +967,7 @@ class FormulaForge:
             history_text = "\n".join([f"{msg.get('role', 'user')}: {msg.get('content', '')}" for msg in history[-4:]])
             prompt = f"Recent Conversation:\n{history_text}\n\n" + prompt
 
-        return self.openai_mini.invoke(
+        return self.nova_mini.invoke(
             prompt,
             system="You are an expert cosmetic chemist advising a luxury brand. Answer concisely and professionally. Do not invent ingredients not in the formula.",
             max_tokens=300
@@ -1019,7 +986,7 @@ class FormulaForge:
             "The 'slogan': a punchy 4-to-6 word luxury advertising slogan.\n"
             "CRITICAL: Output valid JSON only. NO markdown blocks. Just the raw {...} JSON string."
         )
-        response_text = self.openai_client.invoke(
+        response_text = self.nova_client.invoke(
             prompt,
             system="You are a Vogue luxury beauty marketing expert & copywriter.",
             max_tokens=1000,
@@ -1065,7 +1032,7 @@ class FormulaForge:
             "Output ONLY the email text, no markdown block wrappers."
         )
         try:
-            return self.openai_client.invoke(prompt, max_tokens=800)
+            return self.nova_client.invoke(prompt, max_tokens=800)
         except Exception as e:
             return f"Error connecting to Nova: {str(e)}"
 
@@ -1076,7 +1043,7 @@ class FormulaForge:
         # 1. Vision Extraction (Nova multimodal)
         vision_prompt = "Extract the complete list of ingredients from this product label photo. Output ONLY the list of ingredients, separated by commas."
         try:
-            competitor_ingredients = self.openai_client.invoke(
+            competitor_ingredients = self.nova_client.invoke(
                 vision_prompt,
                 image_bytes=image_bytes,
                 image_media_type=f"image/{image_format}",
@@ -1128,7 +1095,7 @@ class FormulaForge:
             # Exclusively use Amazon Nova Canvas
             console.print(f"  [dim]Nova Canvas prompt: {image_desc[:120]}...[/dim]")
             # We use the existing NovaClient instance's bedrock client
-            bedrock_client = self.openai_client._bedrock
+            bedrock_client = self.nova_client._bedrock
             body = json.dumps({
                 "taskType": "TEXT_IMAGE",
                 "textToImageParams": {"text": image_desc[:1000].replace('"', '')},
@@ -1159,8 +1126,8 @@ class FormulaForge:
     def generate_360_frames(self, user_input: str, formula: Formula, output_dir: str, num_frames: int = 6) -> list[str]:
         """
         Generate a sequence of product images at different described angles
-        using DALL-E 3 for 360° interactive viewer. Returns list of frame file paths.
-        Note: DALL-E 3 generates 1 image per call, so we use fewer frames (6 by default).
+        using Nova Canvas for 360° interactive viewer. Returns list of frame file paths.
+        Note: Nova Canvas generates 1 image per call, so we use fewer frames (6 by default).
         """
         frames_dir = os.path.join(output_dir, "360_frames")
         os.makedirs(frames_dir, exist_ok=True)
@@ -1196,7 +1163,7 @@ class FormulaForge:
             try:
                 # Exclusively use Amazon Nova Canvas
                 try:
-                    bedrock_client = self.openai_client.client
+                    bedrock_client = self.nova_client.client
                     body = json.dumps({
                         "taskType": "TEXT_IMAGE",
                         "textToImageParams": {"text": frame_prompt[:1000].replace('"', '')},
@@ -1278,7 +1245,7 @@ class FormulaForge:
                 config=BotoConfig(retries={"max_attempts": 2, "mode": "adaptive"}, read_timeout=300),
             )
 
-            # Build model input — use image-to-video if we have a Canvas/DALL-E image
+            # Build model input — use image-to-video if we have a Nova Canvas image
             text_to_video_params = {"text": turntable_prompt}
 
             if canvas_image_path and os.path.exists(canvas_image_path):
@@ -1365,25 +1332,25 @@ class FormulaForge:
             console.print(f"  [yellow]Nova Reel error ({type(exc).__name__}: {exc})[/yellow]")
             return None
 
-    def _dalle_turntable_fallback(self, user_input: str, output_dir: str, brand_name: str) -> Optional[str]:
-        """Fallback: generate frames with DALL-E 3 and stitch into MP4."""
+    def _nova_canvas_turntable_fallback(self, user_input: str, output_dir: str, brand_name: str) -> Optional[str]:
+        """Generate turntable frames via Amazon Nova Canvas and stitch into MP4."""
         try:
             import re as _re
             safe_name = _re.sub(r'[^a-zA-Z0-9_\-]', '_', brand_name.replace(' ', '_').lower())
             safe_name = _re.sub(r'_+', '_', safe_name).strip('_') or 'product'
 
-            console.print("  [dim]Generating DALL-E 3 turntable frames...[/dim]")
+            console.print("  [dim]Generating Nova Canvas turntable frames...[/dim]")
 
+            bedrock_client = self.nova_client.client
             num_frames = 6
             angles = [int(i * (360 / num_frames)) for i in range(num_frames)]
             frame_images = []
 
             for idx, angle in enumerate(angles):
                 turntable_prompt = (
-                    f"A luxury cosmetic product bottle, {user_input}. "
-                    f"The product has a label reading '{brand_name}'. "
-                    f"Camera orbiting the product at {angle} degrees "
-                    f"(0° is front, 90° is right side, 180° is back, 270° is left side). "
+                    f"A luxury cosmetic product bottle for '{brand_name}', {user_input}. "
+                    f"Camera angle: {angle} degrees around the bottle "
+                    "(0 degrees is front, 90 is right side, 180 is back, 270 is left side). "
                     "Professional studio product photography, smooth lighting. "
                     "Clean dark background, soft volumetric lighting. "
                     "NO HUMANS. NO FACES. Pure product only."
@@ -1391,15 +1358,25 @@ class FormulaForge:
                 console.print(f"  [dim]Frame {idx+1}/{num_frames} at {angle}°...[/dim]")
 
                 try:
-                    resp = self.openai_client.client.images.generate(
-                        model=DALLE_MODEL_ID,
-                        prompt=turntable_prompt[:4000],
-                        size="1024x1024",
-                        quality="standard",
-                        n=1,
-                        response_format="b64_json",
+                    body = json.dumps({
+                        "taskType": "TEXT_IMAGE",
+                        "textToImageParams": {"text": turntable_prompt[:1000].replace('"', "'")},  # type: ignore[index]
+                        "imageGenerationConfig": {
+                            "numberOfImages": 1,
+                            "height": 1024,
+                            "width": 1024,
+                            "cfgScale": 8.0,
+                        },
+                    })
+                    resp = bedrock_client.invoke_model(
+                        modelId=NOVA_CANVAS_MODEL_ID,
+                        contentType="application/json",
+                        accept="application/json",
+                        body=body,
                     )
-                    img_data = base64.b64decode(resp.data[0].b64_json)
+                    _rb = json.loads(resp.get("body").read().decode("utf-8"))
+                    img_b64 = _rb.get("images")[0]  # type: ignore[index]
+                    img_data = base64.b64decode(img_b64)
 
                     from PIL import Image as PILImage
                     import io
@@ -1417,7 +1394,7 @@ class FormulaForge:
             import numpy as np
 
             local_path = os.path.join(output_dir, f"turntable_{safe_name}_{int(time.time())}.mp4")
-            all_frames = list(frame_images) + list(reversed(frame_images[1:-1]))
+            all_frames = list(frame_images) + list(reversed(frame_images[1:-1]))  # type: ignore[index]
 
             fps = 12
             frames_per_image = 6
@@ -1428,11 +1405,11 @@ class FormulaForge:
                     writer.append_data(arr)
             writer.close()
 
-            console.print(f"  [bold green]DALL-E 3 turntable video saved: {local_path}[/bold green]")
+            console.print(f"  [bold green]Nova Canvas turntable video saved: {local_path}[/bold green]")
             return local_path
 
         except Exception as exc:
-            console.print(f"  [yellow]DALL-E 3 video fallback failed ({type(exc).__name__}: {exc})[/yellow]")
+            console.print(f"  [yellow]Nova Canvas turntable fallback failed ({type(exc).__name__}: {exc})[/yellow]")
             return None
 
     # ── Product Search with Real Prices ───────────────────────────────
@@ -1475,7 +1452,7 @@ class FormulaForge:
         )
 
         try:
-            raw = self.openai_client.invoke(
+            raw = self.nova_client.invoke(
                 prompt,
                 system="You are a skincare product researcher. Always provide realistic product information.",
                 max_tokens=2000,
@@ -1526,7 +1503,7 @@ class FormulaForge:
         )
 
         try:
-            raw = self.openai_client.invoke(
+            raw = self.nova_client.invoke(
                 prompt,
                 system="You are a cosmetic safety regulatory expert. Be thorough but only flag real concerns.",
                 max_tokens=1500,
@@ -1582,6 +1559,7 @@ class FormulaForge:
             "formula_v2": formula_to_dict(result.formula_v2),
             "explanation_v1": result.explanation_v1,
             "explanation_v2": result.explanation_v2,
+            "comparison": result.comparison or "",
             "parsed_ingredients": [
                 {"name": ing.name, "category": ing.category, "efficacy_score": ing.efficacy_score}
                 for ing in result.parsed_ingredients
