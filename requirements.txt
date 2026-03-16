@@ -9,4 +9,4 @@ numpy>=1.24.0
 Pillow==10.2.0
 rich==13.7.0
 PuLP==2.7.0
-pyttsx3==2.90
+

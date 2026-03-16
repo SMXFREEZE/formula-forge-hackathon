@@ -23,12 +23,16 @@ import re
 import shutil
 import struct
 import tempfile
+import time as _time
 import traceback
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
+import boto3
+from botocore.config import Config as _BotoConfig
+from botocore.exceptions import ClientError as _BotoClientError
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
@@ -45,6 +49,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # In-memory job store for SSE results
 jobs: dict[str, dict] = {}
+
+# ── Singleton FormulaForge instance (avoids re-creating boto3 clients per request) ──
+_forge = ff.FormulaForge()
 
 
 # ── Serve frontend ────────────────────────────────────────────────────
@@ -116,10 +123,8 @@ async def scan_image(
         content = await image.read()
         media_type = image.content_type or "image/jpeg"
         
-        # Initialize pipeline just to use its nova client
-        # In a real app we'd reuse a singleton
-        forge = ff.FormulaForge()
-        goal_text = forge.scan_ingredient_label(content, media_type)
+        # Use singleton FormulaForge instance
+        goal_text = _forge.scan_ingredient_label(content, media_type)
         return {"goal": goal_text}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -140,8 +145,6 @@ async def start_generation(
         raise HTTPException(400, "Budget must be greater than 0.")
     if budget > 10000:
         raise HTTPException(400, "Budget must be $10,000 or less.")
-
-    import time as _time
 
     # Purge completed jobs older than 2 hours to prevent memory leaks
     _now = _time.time()
@@ -190,7 +193,7 @@ def _run_pipeline(job_id: str):
         job["events"].append(event)
 
     try:
-        forge = ff.FormulaForge()
+        forge = _forge
 
         # Override console output to capture step events
         user_input = job["user_input"]
@@ -474,7 +477,7 @@ async def skin_analysis(
         content = await image.read()
         media_type = image.content_type or "image/jpeg"
 
-        forge = ff.FormulaForge()
+
 
         analysis_prompt = (
             "You are a board-certified dermatologist AI with 20 years of clinical experience. "
@@ -544,8 +547,7 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat_endpoint(req: ChatRequest):
     try:
-        forge = ff.FormulaForge()
-        ans = forge.chat_with_formula(
+        ans = _forge.chat_with_formula(
             question=req.question,
             formula_json=req.formula_json,
             history=req.history
@@ -566,8 +568,7 @@ class CampaignRequest(BaseModel):
 @app.post("/campaign")
 async def campaign_endpoint(req: CampaignRequest):
     try:
-        forge = ff.FormulaForge()
-        assets = forge.generate_campaign(
+        assets = _forge.generate_campaign(
             brand_name=req.brand_name,
             formula_name=req.formula_name,
             vision=req.vision,
@@ -584,10 +585,9 @@ async def campaign_endpoint(req: CampaignRequest):
 async def premier_analysis(req: dict):
     # Nova Pro for clinical & patent review
     try:
-        forge = ff.FormulaForge()
         brand = req.get("brand_name", "FormulaForge Maison")
         formula = req.get("formula_json", "{}")
-        report = forge.generate_premier_analysis(brand, formula)
+        report = _forge.generate_premier_analysis(brand, formula)
         return {"report": report}
     except Exception as e:
         traceback.print_exc()
@@ -600,8 +600,7 @@ class PremierRequest(BaseModel):
 @app.post("/outreach_email")
 async def outreach_email_endpoint(req: PremierRequest):
     try:
-        forge = ff.FormulaForge()
-        email_body = forge.generate_outreach_email(
+        email_body = _forge.generate_outreach_email(
             brand_name=req.brand_name,
             formula_json=req.formula_json
         )
@@ -616,15 +615,14 @@ async def competitor_teardown_endpoint(
     formula_json: str = Form(...)
 ):
     try:
-        forge = ff.FormulaForge()
         file_ext = image.filename.split(".")[-1].lower()
         if file_ext == 'jpg': file_ext = 'jpeg'
         if file_ext not in ['jpeg', 'png', 'webp', 'gif']:
             raise HTTPException(status_code=400, detail="Unsupported image format. Use JPEG, PNG, or WEBP.")
-            
+
         img_bytes = await image.read()
-        
-        report = forge.generate_competitor_teardown(
+
+        report = _forge.generate_competitor_teardown(
             image_bytes=img_bytes,
             image_format=file_ext,
             our_formula_json=formula_json
@@ -645,8 +643,6 @@ def _vc_nova_client():
     """Return a cached Bedrock Runtime client (created once per process)."""
     global _VC_NOVA_CLIENT
     if _VC_NOVA_CLIENT is None:
-        import boto3
-        from botocore.config import Config as _BotoConfig
         _VC_NOVA_CLIENT = boto3.client(
             "bedrock-runtime",
             region_name=_VC_AWS_REGION,
@@ -733,8 +729,6 @@ def _polly_speak(text: str) -> Optional[bytes]:
     """Convert text to WAV via Amazon Polly neural voice.
     Returns None if Polly is unavailable so the frontend can use Web Speech API.
     """
-    import boto3
-    from botocore.exceptions import ClientError as _BotoClientError
     try:
         polly = boto3.client("polly", region_name=_VC_AWS_REGION)
         resp = polly.synthesize_speech(
@@ -761,7 +755,7 @@ async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
     print(f"Voice Chat WebSocket connected (Mode: {mode}).")
 
     # Per-session conversation history for context
-    conversation_history: List[Any] = []
+    conversation_history: List[Any] = []  # capped at 50 turns to prevent memory leak
     s2s_context: Dict[str, Any] = {
         "is_active": True,
         "visual_data": None,
@@ -904,10 +898,12 @@ async def s2s_websocket(websocket: WebSocket, mode: str = "general_chat"):
                     ),
                 )
 
-            # 5. Save to history
+            # 5. Save to history (capped at 50 entries to avoid memory leak)
             display_user_text = user_text
             conversation_history.append({"role": "user", "content": actual_prompt})
             conversation_history.append({"role": "assistant", "content": reply_text})
+            if len(conversation_history) > 50:
+                conversation_history[:] = conversation_history[-50:]
 
             # Increment turn counter and decide whether to suggest formula
             if mode == "video_call":
@@ -1070,8 +1066,7 @@ class ProductSearchRequest(BaseModel):
 async def product_search(req: ProductSearchRequest):
     """Search for real products with prices and purchase links."""
     try:
-        forge = ff.FormulaForge()
-        products = forge.search_product_prices(
+        products = _forge.search_product_prices(
             concerns=req.concerns,
             skin_type=req.skin_type,
             ingredients=req.ingredients,
@@ -1088,8 +1083,7 @@ class SafetyCheckRequest(BaseModel):
 async def ingredient_safety(req: SafetyCheckRequest):
     """Check ingredients for safety concerns and regulatory issues."""
     try:
-        forge = ff.FormulaForge()
-        alerts = forge.check_ingredient_safety(req.ingredients)
+        alerts = _forge.check_ingredient_safety(req.ingredients)
         return {"alerts": alerts}
     except Exception as e:
         traceback.print_exc()

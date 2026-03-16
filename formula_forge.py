@@ -1201,7 +1201,7 @@ class FormulaForge:
 
     # ── Default AWS configuration for Nova Reel ─────────────────────────
     DEFAULT_S3_BUCKET = "formulaforge-reel-outputs"
-    DEFAULT_BEDROCK_ROLE_ARN = "arn:aws:iam::455982475302:role/formulaforge-bedrock-role"
+    DEFAULT_BEDROCK_ROLE_ARN = ""  # Set via FORGE_BEDROCK_ROLE_ARN env var — never hardcode IAM ARNs
 
     def generate_turntable_video(self, user_input: str, output_dir: str, canvas_image_path: str = "", s3_bucket: str = "", **kwargs) -> Optional[str]:
         """
